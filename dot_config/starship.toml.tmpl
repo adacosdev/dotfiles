@@ -1,0 +1,59 @@
+add_newline = false
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$docker_context\
+$fill\
+$cmd_duration\
+$line_break\
+$character"""
+
+[fill]
+symbol = " "
+
+[directory]
+style = "bold blue"
+format = "[$path]($style) "
+
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "magenta"
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
+conflicted = "="
+ahead = "⇡"
+behind = "⇣"
+untracked = "?"
+modified = "!"
+staged = "+"
+deleted = "✘"
+
+[nodejs]
+symbol = "⬢ "
+style = "bold green"
+format = "is [$symbol($version)]($style) "
+detect_files = ["package.json", "node_modules"]
+
+[docker_context]
+symbol = " "
+style = "bold blue"
+format = "via [$symbol$context]($style) "
+
+[cmd_duration]
+min_time = 500
+style = "italic gray"
+format = "took [$duration]($style) "
+
+[character]
+{{ if eq .entorno "trabajo" -}}
+success_symbol = "[💼 ➜](bold blue) "
+{{ else -}}
+success_symbol = "[🏠 ➜](bold green) "
+{{ end -}}
+error_symbol = "[➜](bold red) "
