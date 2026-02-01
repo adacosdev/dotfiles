@@ -1,0 +1,38 @@
+eval "$(starship init zsh)"
+source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# Atajos para Git
+alias gs="git status"
+alias ga="git add ."
+alias gc="git commit -m"
+alias gp="git push"
+
+# Atajos para Node/Proyectos
+alias ni="npm install"
+alias nd="npm run dev"
+alias nb="npm run build"
+
+# Atajos de sistema
+alias cls="clear"
+alias ll="ls -la --color=auto"
+
+
+# Navegación rápida
+alias ..="cd .."
+alias ...="cd ../.."
+
+# Docker (Ahorra mucho tiempo)
+alias d="docker"
+alias dc="docker-compose"
+alias dcu="docker-compose up -d"
+alias dcd="docker-compose down"
+alias dcl="docker-compose logs -f"
+
+# Herramientas de red (Para ver qué puerto está ocupado)
+alias ports="sudo lsof -i -P -n | grep LISTEN"
+# fnm
+FNM_PATH="/home/adacosdev/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "`fnm env`"
+fi
