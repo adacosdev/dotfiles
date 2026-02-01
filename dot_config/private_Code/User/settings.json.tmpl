@@ -279,17 +279,9 @@
 	"chat.mcp.gallery.enabled": true,
 	"editor.fontSize": 16,
 	"workbench.colorTheme": "Ayu Dark Bordered",
-	"terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font'"
-    
-    	"workbench.colorCustomizations": {
-        	{{- if eq .entorno "adaion" }}
-        	"statusBar.background": "#005f87",
-        	"statusBar.foreground": "#ffffff",
-        	"statusBarItem.hoverBackground": "#0087af"
-        	{{- else }}
-        	"statusBar.background": "#4e2a84",
-        	"statusBar.foreground": "#ffffff",
-        	"statusBarItem.hoverBackground": "#7042b4"
-        	{{- end }}
-    	}
+	"terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font'",
+	"workbench.colorCustomizations": {
+		"statusBar.background": "{{ if eq .entorno "adaion" }}{{ .color_barra_adaion }}{{ else }}{{ .color_barra_home }}{{ end }}",
+		"statusBar.foreground": "{{ if eq .entorno "adaion" }}{{ .color_fuente_adaion }}{{ else }}{{ .color_fuente_home }}{{ end }}"
+	}
 }
