@@ -14,10 +14,15 @@ zf() { # > Find folder and jump into it
 }
 
 h() { # > Show aliases and functions help
-  grep -E '^(alias|.*(\(\)\s*\{))' "$HOME/.config/zsh/aliases.zsh" "$HOME/.config/zsh/functions.zsh" | \
+  grep -Eh '^(alias|.*(\(\)\s*\{))' $HOME/.config/zsh/*.zsh | \
   sed -E 's/alias //g; s/\(\)\s*\{//g' | \
   column -t -s '#' | \
-  fzf --height 40% --reverse --header "Personal User Manual"
+  fzf --height 45% \
+      --reverse \
+      --border \
+      --header " ⚡ ADACOSDEV OS _ COMMAND_CENTER ⚡ " \
+      --color="header:italic:magenta,border:blue" \
+      --prompt " ❯ "
 }
 
 p() { # > Search project and open in VS Code
