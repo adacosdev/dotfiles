@@ -1,0 +1,31 @@
+#!/bin/bash
+echo "🛠️ Instalando entornos (fnm, pyenv)..."
+
+# --- FNM (Fast Node Manager) ---
+if ! command -v fnm &> /dev/null; then
+    echo "📦 Instalando fnm..."
+    curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+    # Export path temporarily to use it in the next step
+    export PATH="$HOME/.local/share/fnm:$PATH"
+    eval "$(fnm env)"
+    echo "🟢 Instalando Node.js LTS..."
+    fnm install --lts
+    fnm use --lts
+else
+    echo "✅ fnm ya está instalado."
+fi
+
+# --- PYENV (Python Version Manager) ---
+if [ ! -d "$HOME/.pyenv" ]; then
+    echo "🐍 Instalando pyenv..."
+    # Dependencias necesarias para compilar Python en varias distros
+    {{ if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
+    sudo apt update && sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    {{ else if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
+    sudo pacman -S --noconfirm base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libxml2 libffi
+    {{ end -}}
+    
+    curl https://pyenv.run | bash
+else
+    echo "✅ pyenv ya está instalado."
+fi
