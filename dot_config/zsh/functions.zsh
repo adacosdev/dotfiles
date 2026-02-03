@@ -50,3 +50,18 @@ h() { # > Show aliases and functions help
     --preview 'echo {} | ack -o "(?<=# ).*"' \
     --preview-window=up:wrap
 }
+
+hs() { # > Interactive history search with fzf
+  if ! command -v fzf &> /dev/null; then
+    history 0
+    return
+  fi
+  local cmd
+  # fc -l (list) -n (no numbers) -r (reverse order) 1 (all history)
+  cmd=$(fc -lnr 1 | fzf --no-sort --exact --query "$1")
+  
+  if [ -n "$cmd" ]; then
+      print -s "$cmd" # Add to history
+      eval "$cmd"     # Execute
+  fi
+}
