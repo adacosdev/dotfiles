@@ -19,6 +19,9 @@ alias nb="npm run build" # > Build node project
 alias cls="clear" # > Clear terminal
 
 # Help / Cheatsheet
+# Unalias h if it exists to avoid conflicts when defining the function
+unalias h 2>/dev/null || true
+
 h() {
     local alias_file="${HOME}/.config/zsh/aliases.zsh"
     echo -e "\n\033[1;36m💊 Dotfiles Cheatsheet\033[0m\n"

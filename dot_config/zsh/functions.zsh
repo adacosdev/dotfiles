@@ -13,26 +13,6 @@ zf() { # > Find folder and jump into it
   [ -n "$dir" ] && z "$dir"
 }
 
-h() { # > Show aliases and functions help
-  (
-    grep -Eh '^alias ' $HOME/.config/zsh/*.zsh | perl -ne '
-      if (/alias\s+([^=]+)=\x27?([^\x27#]+)\x27?\s*#\s*>\s*(.*)/) {
-        printf "\033[32m%-12s\033[0m \033[34m→\033[0m \033[37m%-55s\033[0m \033[90m# %s\033[0m\n", $1, $2, $3;
-      }'
-
-    grep -Eh '^[a-zA-Z0-9_-]+\s*\(\)\s*\{' $HOME/.config/zsh/*.zsh | perl -ne '
-      if (/^([a-zA-Z0-9_-]+)\s*\(\)\s*\{\s*#\s*>\s*(.*)/) {
-        printf "\033[36m%-12s\033[0m \033[34m(f)\033[0m \033[37m%-55s\033[0m \033[90m# %s\033[0m\n", $1, "function", $2;
-      }'
-  ) | sort | fzf \
-    --ansi \
-    --height 45% \
-    --reverse \
-    --border \
-    --header " ⚡ ADACOSDEV OS _ COMMAND_CENTER ⚡ " \
-    --color="header:italic:magenta,border:blue,prompt:yellow" \
-    --prompt " ❯ "
-}
 
 p() { # > Search project and open in VS Code
   cd ~/Dev && cd $(fd --type d --max-depth 2 | fzf) && code .
