@@ -47,7 +47,7 @@ h() { # > Show aliases and functions help
     --header " 💊 DOTFILES CHEATSHEET " \
     --color="header:italic:cyan,border:blue,fg+:yellow,pointer:magenta" \
     --prompt "Search > " \
-    --preview 'echo {} | ack -o "(?<=# ).*"' \
+    --preview 'echo {} | perl -pe "s/.*# //"' \
     --preview-window=up:wrap
 }
 
