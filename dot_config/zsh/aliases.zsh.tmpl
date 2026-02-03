@@ -18,27 +18,7 @@ alias nb="npm run build" # > Build node project
 # System Shortcuts
 alias cls="clear" # > Clear terminal
 
-# Help / Cheatsheet
-# Unalias h if it exists to avoid conflicts when defining the function
-unalias h 2>/dev/null || true
 
-h() {
-    local alias_file="${HOME}/.config/zsh/aliases.zsh"
-    echo -e "\n\033[1;36m💊 Dotfiles Cheatsheet\033[0m\n"
-    
-    if [[ -f "$alias_file" ]]; then
-        # Extract commented aliases from this file
-        # Pattern looks for: alias name=... # > Description
-        # We process the file safely, even if no matches found
-        grep "alias " "$alias_file" | grep "# >" | \
-        sed 's/alias \([^=]*\)=.* # > \(.*\)/\1:\2/' | \
-        awk -F':' '{printf "\033[0;33m%-10s\033[0m %s\n", $1, $2}' || echo "No aliases to display."
-    else
-        echo "⚠️  Aliases file not found ($alias_file)"
-    fi
-    
-    echo ""
-}
 
 # History Search (hs)
 if command -v fzf &> /dev/null; then
