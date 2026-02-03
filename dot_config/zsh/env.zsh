@@ -1,3 +1,6 @@
+# Add local binaries to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # fnm
 FNM_PATH="/home/adacosdev/.local/share/fnm"
 if [ -d "$FNM_PATH" ]; then

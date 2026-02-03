@@ -1,0 +1,79 @@
+# Git Shortcuts
+alias gs="git status" # > View git status
+alias ga="git add ." # > Add all changes to git
+alias gc="git commit -m" # > Create a commit with message
+alias gp="git push" # > Push changes to repository
+{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
+alias lg="lazygit" # > Terminal UI for Git
+{{ else if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
+# Lazygit might need manual install/PPA on some Ubuntus, but let's assume it's there or user installs it
+alias lg="lazygit"
+{{ end -}}
+
+# Node/Project Shortcuts
+alias ni="npm install" # > Install node dependencies
+alias nd="npm run dev" # > Start node development server
+alias nb="npm run build" # > Build node project
+
+# System Shortcuts
+alias cls="clear" # > Clear terminal
+
+# History (Interactive with fzf if available)
+if command -v fzf &> /dev/null; then
+  alias h="history 0 | fzf --tac --no-sort --exact"
+else
+  alias h="history 0"
+fi
+
+
+# Fast Navigation
+alias ..="cd .." # > Go up one directory level
+alias ...="cd ../.." # > Go up two directory levels
+
+# Docker (Time saver)
+alias d="docker" # > Docker base command
+alias dc="docker-compose" # > Docker-compose base command
+alias dcu="docker-compose up -d" # > Start docker services in background
+alias dcd="docker-compose down" # > Stop and remove docker services
+alias dcl="docker-compose logs -f" # > View docker logs in real time
+
+# Network Tools (Check occupied ports)
+alias ports="sudo lsof -i -P -n | grep LISTEN" # > View listening ports
+
+# Update System (Distro Agnostic)
+{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
+alias update-all='sudo pacman -Syu && yay -Sua && chezmoi update' # > Update system and dotfiles (Arch)
+{{ else if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
+alias update-all='sudo apt update && sudo apt upgrade -y && chezmoi update' # > Update system and dotfiles (Debian/Ubuntu)
+{{ else -}}
+alias update-all='chezmoi update' # > Update system not supported, just dotfiles
+{{ end -}}
+
+# Bat instead of cat (Smart check)
+if command -v bat &> /dev/null; then
+    alias cat='bat --paging=never'
+elif command -v batcat &> /dev/null; then
+    alias cat='batcat --paging=never'
+fi
+
+
+# Eza instead of ls (Smart check)
+if command -v eza &> /dev/null; then
+    alias ls='eza --icons --group-directories-first'
+    alias ll='eza -lh --icons --grid --group-directories-first'
+    alias tree='eza --tree --icons'
+elif command -v exa &> /dev/null; then
+    # Compatibility with older versions
+    alias ls='exa --icons --group-directories-first'
+    alias ll='exa -lh --icons --grid --group-directories-first'
+    alias tree='exa --tree --icons'
+else
+    # Fallback to standard ls
+    alias ll='ls -la --color=auto'
+fi
+
+alias ce='chezmoi edit' # > Edit chezmoi config
+alias ca='chezmoi apply' # > Apply chezmoi changes
+alias cdz='chezmoi cd' # > Change to chezmoi directory
+alias cs='chezmoi status' # > View chezmoi status
+alias capply='chezmoi apply && source ~/.zshrc' # > Apply chezmoi and reload terminal
