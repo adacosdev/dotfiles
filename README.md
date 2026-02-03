@@ -44,7 +44,7 @@ Scripts execute in a deterministic order thanks to numbered prefixes:
 This repository includes guides to facilitate maintenance:
 
 - [📈 Scalability Guide](docs/SCALABILITY.md): Explains how to add new packages, support new distros, and understand the `.chezmoidata.yaml` structure.
-- [🛠️ Tools Guide](docs/TOOLS.md): Discover how to use the included productivity tools like `h` (supercharged history), `zoxide`, `lazygit`, and more.
+- [🛠️ Tools Guide](docs/TOOLS.md): Discover how to use the included productivity tools like `h` (aliases cheatsheet), `hs` (smart history), `zoxide`, `lazygit`, and more.
 
 ## 🔧 Environment Configuration
 This repo uses dynamic Chezmoi templates. The first time you run `chezmoi init`, you will be prompted for your email and environment type (`personal` or `adaion`).

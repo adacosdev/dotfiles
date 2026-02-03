@@ -34,8 +34,12 @@ A line-oriented search tool that recursively searches the current directory for 
 
 ### Shortcuts & Aliases
 
-#### `h` - Interactive History
+#### `h` - Aliases Cheatsheet
 **Command:** `h`
+Displays a quick cheatsheet of all available aliases with descriptions, making it easy to discover and remember shortcuts.
+
+#### `hs` - Interactive History
+**Command:** `hs`
 A supercharged history command. It pipes your command history into `fzf`, allowing you to fuzzy-search through past commands and execute them instantly.
 
 ### Utilities
