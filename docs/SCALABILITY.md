@@ -1,44 +1,44 @@
-# 📈 Escalabilidad y Mantenimiento
+# 📈 Scalability & Maintenance
 
-Este repositorio está diseñado para ser escalable y soportar múltiples distribuciones de Linux (actualmente **Arch/EndeavourOS** y **Ubuntu/Debian**). Aquí se explica cómo añadir nuevas configuraciones o paquetes.
+This repository is designed to be scalable and support multiple Linux distributions (currently **Arch/EndeavourOS** and **Ubuntu/Debian**). This guide explains how to add new configurations or packages.
 
-## 📦 Gestión de Paquetes
+## 📦 Package Management
 
-Los paquetes no se definen en los scripts, sino en `.chezmoidata.yaml`. Esto centraliza la gestión y facilita la lectura.
+Packages are not defined inside the shell scripts to keep them clean. Instead, they are centralized in `.chezmoidata.yaml` for easy reading and management.
 
-### Estructura de `.chezmoidata.yaml`
+### Structure of `.chezmoidata.yaml`
 
 ```yaml
 packages:
-  # Lista para Ubuntu/Debian
+  # List for Ubuntu/Debian
   ubuntu:
     - packagename
     - another-package
-  # Lista para Arch/EndeavourOS
+  # List for Arch/EndeavourOS
   arch:
     - packagename
     - another-package-aur
 ```
 
-### Cómo añadir un paquete
+### How to add a package
 
-1. Abre `.chezmoidata.yaml`.
-2. Busca la sección de tu distribución (`arch` o `ubuntu`).
-3. Añade el nombre exacto del paquete.
-   - En **Arch**, el script usará `yay` (soporta repos oficiales y AUR).
-   - En **Ubuntu**, el script usará `apt`.
+1. Open `.chezmoidata.yaml`.
+2. Find the section for your distro (`arch` or `ubuntu`).
+3. Add the exact package name.
+   - On **Arch**, the script uses `yay` (supports official repos and AUR).
+   - On **Ubuntu**, the script uses `apt`.
 
-### Cómo añadir una nueva Distribución (Fedora, por ejemplo)
+### How to add a new Distribution (e.g., Fedora)
 
-1. Añade una nueva lista en `.chezmoidata.yaml`:
+1. Add a new list in `.chezmoidata.yaml`:
    ```yaml
    packages:
      fedora:
        - git
        - zsh
    ```
-2. Edita `run_onchange_after_install-packages.sh.tmpl`:
-   - Añade un bloque condicional:
+2. Edit `run_onchange_00_install-packages.sh.tmpl`:
+   - Add a conditional block:
      ```bash
      {{ else if eq .chezmoi.osRelease.id "fedora" -}}
      packages=(
@@ -49,29 +49,29 @@ packages:
      sudo dnf install -y "${packages[@]}"
      ```
 
-## 🖥️ Configuración de Scripts
+## 🖥️ Script Configuration
 
-Los scripts utilizan plantillas de `chezmoi` (`.tmpl`). Puedes usar lógica de Go templates para condicionar la ejecución.
+Scripts use `chezmoi` templates (`.tmpl`). You can use Go template logic to condition execution.
 
-### Variables Útiles
+### Useful Variables
 
 - `{{ .chezmoi.os }}`: `linux`, `darwin` (macOS), `windows`.
 - `{{ .chezmoi.osRelease.id }}`: `arch`, `ubuntu`, `debian`, `fedora`.
-- `{{ .entorno }}`: Variable personalizada definida en el init (`personal` o `adaion`).
+- `{{ .entorno }}`: Custom variable defined during init (`personal` or `adaion`).
 
-Ejemplo de uso en un script:
+Example usage in a script:
 ```bash
 {{ if eq .entorno "adaion" }}
-# Configuración específica del trabajo
+# Work specific configuration
 {{ end }}
 ```
 
-## 📂 Estructura de Archivos Recomendada
+## 📂 Recommended File Structure
 
-- **Scripts de instalación única:** `run_once_*.sh.tmpl` (se ejecutan solo si no existen o cambian).
-- **Scripts de cambio:** `run_onchange_*.sh.tmpl` (se ejecutan cada vez que cambias el contenido del script, útil para listas de paquetes).
-- **Configuraciones:** Usa `dot_config/carpeta/archivo` para mapear a `~/.config/carpeta/archivo`.
+- **One-time install scripts:** `run_once_*.sh.tmpl` (run only if they don't exist or content changes).
+- **Change-driven scripts:** `run_onchange_*.sh.tmpl` (run every time the file content changes, useful for package lists).
+- **Dotfiles:** Use `dot_config/folder/file` to map to `~/.config/folder/file`.
 
 ---
 
-Mantén este archivo actualizado si cambias la lógica principal de instalación.
+Keep this file updated if you change the main installation logic.
