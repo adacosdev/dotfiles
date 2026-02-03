@@ -18,7 +18,13 @@ Mi configuración personal y profesional automatizada con **Chezmoi**. Diseñada
 Si estás en una instalación limpia, solo necesitas tener `git` y `chezmoi` instalados. Luego ejecuta:
 
 ```bash
-chezmoi init --apply [https://github.com/TU_USUARIO/dotfiles](https://github.com/TU_USUARIO/dotfiles)
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply adacosdev
+```
+
+O si ya tienes `chezmoi`:
+
+```bash
+chezmoi init --apply adacosdev
 ```
 
 ## 📂 Estructura de Scripts
@@ -31,16 +37,24 @@ Los scripts se ejecutan automáticamente en orden gracias a los prefijos de Chez
 | run_once_install-fonts.sh | Descarga y actualiza las fuentes en ~/.local/share/fonts. |
 | run_once_install-extensions.sh | Sincroniza tus extensiones de VS Code. |
 
+## 📂 Documentación y Escalabilidad
+
+El repositorio incluye guías para facilitar su mantenimiento:
+
+- [📈 Guía de Escalabilidad](docs/SCALABILITY.md): Explica cómo añadir paquetes, nuevas distribuciones y entender la estructura de datos en `.chezmoidata.yaml`.
+- [🛠️ Herramientas de Productividad](docs/TOOLS.md): Descubre cómo usar `h` (historial mejorado), `zoxide`, `lazygit` y otras utilidades incluidas.
+
 ## 🔧 Configuración por Entorno
-Este repo utiliza plantillas de Chezmoi. Para cambiar entre perfil personal o de trabajo, edita el archivo de configuración:
+Este repo utiliza plantillas de Chezmoi. La primera vez que ejecutes `chezmoi init`, se te preguntará por tu email y tipo de entorno (`personal` o `adaion`).
+
+Si necesitas cambiarlo más tarde, puedes usar:
 
 ```bash
-chezmoi edit-config
+chezmoi init
 ```
-Y asegúrate de que la variable entorno esté definida:
-```toml
-[data]
-  entorno = "home" # o "home"
+O editar directamente el archivo local:
+```bash
+chezmoi edit-config
 ```
 
 Hecho con ❤️ por [adacosdev](https://github.com/adacosdev)
