@@ -22,8 +22,14 @@ alias cls="clear" # > Clear terminal
 if command -v fzf &> /dev/null; then
   # This function gets the command from history, prints it to the buffer and runs it
   h() {
-    print -s $(history 0 | fzf --tac --no-sort --exact | sed 's/^[0-9 ]*//' | sed 's/[0-9]\{2\}:[0-9]\{2\}  //')
-    eval $(history 0 | fzf --tac --no-sort --exact | sed 's/^[0-9 ]*//' | sed 's/[0-9]\{2\}:[0-9]\{2\}  //')
+    local cmd
+    # fc -l (list) -n (no numbers) -r (reverse order) 1 (all history)
+    cmd=$(fc -lnr 1 | fzf --no-sort --exact --query "$1")
+    
+    if [ -n "$cmd" ]; then
+        print -s "$cmd" # Add to history
+        eval "$cmd"     # Execute
+    fi
   }
 else
   alias h="history 0"
