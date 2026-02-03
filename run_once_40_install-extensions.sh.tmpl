@@ -66,6 +66,11 @@ if ! command -v code &> /dev/null; then
   exit 0
 fi
 
+# --- Progress Banner ---
+echo -e "\033[0;34m"
+echo "████████████████     [80%] Fase 5/6: Sincronizando Extensiones VS Code"
+echo -e "\033[0m"
+
 for ext in "${extensions[@]}"; do
   # Comprobar si ya está instalada para no perder tiempo
   if ! code --list-extensions | grep -iq "^$ext$"; then

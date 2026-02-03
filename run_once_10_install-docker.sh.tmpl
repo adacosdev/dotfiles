@@ -1,5 +1,10 @@
 #!/bin/bash
 # {{ if eq .chezmoi.os "linux" }}
+# --- Progress Banner ---
+echo -e "\033[0;34m"
+echo "███████              [35%] Fase 2/6: Configurando Docker"
+echo -e "\033[0m"
+
 echo "🐳 Configurando Docker..."
 
 install_docker() {

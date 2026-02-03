@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# --- Progress Banner ---
+echo -e "\033[0;34m"
+echo "█████████████        [65%] Fase 4/6: Instalando Tipografías"
+echo -e "\033[0m"
+
 # 1. DETECCIÓN DE DEPENDENCIAS
 echo "🔍 Comprobando dependencias del sistema..."
 

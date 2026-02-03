@@ -1,6 +1,11 @@
 {{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
+# --- Progress Banner ---
+echo -e "\033[0;34m"
+echo "████                 [20%] Fase 1/6: Instalando Paquetes del Sistema"
+echo -e "\033[0m"
+
 echo "📦 Iniciando instalación de paquetes..."
 
 # --- Arch Linux / EndeavourOS ---
