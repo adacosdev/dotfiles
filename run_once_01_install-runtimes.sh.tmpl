@@ -5,6 +5,12 @@ echo "🛠️ Instalando entornos (fnm, pyenv)..."
 if ! command -v fnm &> /dev/null; then
     echo "📦 Instalando fnm..."
     curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+    # Export path temporarily to use it in the next step
+    export PATH="$HOME/.local/share/fnm:$PATH"
+    eval "$(fnm env)"
+    echo "🟢 Instalando Node.js LTS..."
+    fnm install --lts
+    fnm use --lts
 else
     echo "✅ fnm ya está instalado."
 fi

@@ -1,0 +1,8 @@
+{{- $name := promptStringOnce . "name" "Full name" "Adrián Acosa Sánchez" -}}
+{{- $email := promptStringOnce . "email" "Email address" "adrianacosasanchez@proton.me" -}}
+{{- $entorno := promptStringOnce . "entorno" "Entorno (personal/adaion)" "personal" -}}
+
+[data]
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}
+    entorno = {{ $entorno | quote }}

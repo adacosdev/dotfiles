@@ -61,8 +61,17 @@ wix.vscode-import-cost
 yzhang.markdown-all-in-one
 )
 
+if ! command -v code &> /dev/null; then
+  echo "⚠️  VS Code no está instalado. Saltando instalación de extensiones."
+  exit 0
+fi
+
 for ext in "${extensions[@]}"; do
-  code --install-extension "$ext" --force
+  # Comprobar si ya está instalada para no perder tiempo
+  if ! code --list-extensions | grep -iq "^$ext$"; then
+    echo "Installing $ext..."
+    code --install-extension "$ext" --force
+  fi
 done
 
 echo "✅ Extensiones actualizadas."
