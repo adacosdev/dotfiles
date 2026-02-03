@@ -1,253 +1,112 @@
 {{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
-# Lista de tus programas (Añade o quita aquí lo que quieras)
+echo "📦 Iniciando instalación de paquetes..."
+
+# --- Arch Linux / EndeavourOS ---
+{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
 packages=(
-  accountsservice
-  alsa-firmware
-  alsa-plugins
-  alsa-utils
-  amd-ucode
-  ark
-  aspell
-  b43-fwcutter
-  base
-  base-devel
-  bash-completion
-  bat
-  bind
-  bitwarden-cli
-  bluedevil
-  bluez
-  bluez-utils
-  brave-bin
-  breeze-gtk
-  btrfs-progs
-  cantarell-fonts
-  chezmoi
-  cryptsetup
-  device-mapper
-  dialog
-  diffutils
-  dmidecode
-  dmraid
-  dnsmasq
-  docker
-  docker-compose
-  dolphin
-  dolphin-plugins
-  dosfstools
-  downgrade
-  dracut
-  duf
-  e2fsprogs
-  efibootmgr
-  efitools
-  endeavouros-branding
-  endeavouros-keyring
-  endeavouros-konsole-colors
-  endeavouros-mirrorlist
-  eos-apps-info
-  eos-breeze-sddm
-  eos-dracut
-  eos-hooks
-  eos-log-tool
-  eos-packagelist
-  eos-quickstart
-  eos-rankmirrors
-  eos-settings-plasma
-  ethtool
-  ex-vi-compat
-  exfatprogs
-  eza
-  f2fs-tools
-  ffmpegthumbs
-  firefox
-  firewalld
-  fwupd
-  git
-  git-delta
-  glances
-  grub
-  gst-libav
-  gst-plugin-pipewire
-  gst-plugins-bad
-  gst-plugins-ugly
-  gwenview
-  haruna
-  haveged
-  hdparm
-  helix
-  hwdetect
-  hwinfo
-  inetutils
-  inxi
-  iptables-nft
-  iwd
-  jfsutils
-  kate
-  kcalc
-  kde-cli-tools
-  kde-gtk-config
-  kdeconnect
-  kdegraphics-thumbnailers
-  kdenetwork-filesharing
-  kdeplasma-addons
-  kgamma
-  kimageformats
-  kinfocenter
-  kio-admin
-  kio-extras
-  kio-fuse
-  konsole
-  kscreen
-  kwallet-pam
-  kwayland-integration
-  less
-  libappindicator
-  libdvdcss
-  libgsf
-  libopenraw
-  linux
-  linux-firmware
-  linux-headers
-  linux-lts
-  linux-lts-headers
-  logrotate
-  lsb-release
-  lsscsi
-  lvm2
-  man-db
-  man-pages
-  mdadm
-  meld
-  mesa-utils
-  mkinitcpio
-  modemmanager
-  mtools
-  nano
-  nano-syntax-highlighting
-  neovim
-  netctl
-  networkmanager
-  networkmanager-openconnect
-  networkmanager-openvpn
-  nfs-utils
-  nilfs-utils
-  noto-fonts
-  noto-fonts-cjk
-  noto-fonts-emoji
-  noto-fonts-extra
-  nss-mdns
-  ntfs-3g
-  ntp
-  nvidia-hook
-  nvidia-inst
-  nvidia-open
-  nvidia-open-lts
-  okular
-  openssh
-  os-prober
-  pacman-contrib
-  pavucontrol
-  perl
-  pipewire-alsa
-  pipewire-jack
-  pipewire-pulse
-  pkgfile
-  plasma-browser-integration
-  plasma-desktop
-  plasma-disks
-  plasma-firewall
-  plasma-keyboard
-  plasma-nm
-  plasma-pa
-  plasma-systemmonitor
-  plasma-workspace
-  plasma-x11-session
-  plocate
-  plymouth
-  poppler-glib
-  power-profiles-daemon
-  powerdevil
-  print-manager
-  python
-  python-defusedxml
-  python-jinja
-  python-packaging
-  python-pyqt6
-  qt6-imageformats
-  rebuild-detector
-  reflector
-  reflector-simple
-  rsync
-  rtkit
-  s-nail
-  sddm-kcm
-  sg3_utils
-  smartmontools
-  sof-firmware
-  spectacle
-  sudo
-  switcheroo-control
-  sysfsutils
-  systemd-sysvcompat
-  texinfo
-  tk
-  tldr
-  ttf-bitstream-vera
-  ttf-cascadia-code-nerd
-  ttf-dejavu
-  ttf-dejavu-nerd
-  ttf-firacode-nerd
-  ttf-hack-nerd
-  ttf-iosevka-nerd
-  ttf-jetbrains-mono-nerd
-  ttf-liberation
-  ttf-opensans
-  unrar
-  unzip
-  upower
-  usb_modeswitch
-  usbutils
-  visual-studio-code-bin
-  warp-terminal
-  welcome
-  wget
-  which
-  whois
-  wireless-regdb
-  wireplumber
-  woeusb-ng
-  wpa_supplicant
-  xdg-desktop-portal-kde
-  xdg-user-dirs
-  xdg-utils
-  xf86-input-libinput
-  xfsprogs
-  xl2tpd
-  xorg-server
-  xorg-xdpyinfo
-  xorg-xinit
-  xorg-xinput
-  xorg-xkill
-  xorg-xrandr
-  xsettingsd
-  xterm
-  yakuake
-  yay
-  zoxide
-  zsh
-  zsh-completions
-  zsh-autosuggestions
-  zsh-syntax-highlighting
-  fzf
+{{ range .packages.arch -}}
+  {{ . }}
+{{ end -}}
 )
 
-echo "📦 Comprobando paquetes faltantes..."
+# Bootstrap yay
+if ! command -v yay &> /dev/null; then
+    echo "🔧 Instalando yay..."
+    sudo pacman -S --needed --noconfirm base-devel git
+    sudo pacman -Sy --noconfirm archlinux-keyring
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    cd /tmp/yay
+    makepkg -si --noconfirm
+    cd -
+    rm -rf /tmp/yay
+fi
 
-# Instalamos usando yay (que maneja repo oficial y AUR)
-# Solo instala lo que no esté ya en el sistema
+echo "🔄 Sincronizando repositorios..."
+sudo pacman -Sy --noconfirm archlinux-keyring
+
+echo "📥 Instalando paquetes con yay..."
 yay -S --needed --noconfirm "${packages[@]}"
 
+# --- Debian / Ubuntu ---
+{{ else if eq .chezmoi.osRelease.id "debian" "ubuntu" -}}
+packages=(
+{{ range .packages.ubuntu -}}
+  {{ . }}
+{{ end -}}
+)
+
+echo "🔄 Preparando repositorios externos..."
+# VS Code Repo
+if ! command -v code &> /dev/null; then
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+    sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+    sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+    rm -f packages.microsoft.gpg
+fi
+
+echo "🔄 Actualizando repositorios APT..."
+sudo apt update
+
+echo "📥 Instalando paquetes con apt..."
+sudo apt install -y "${packages[@]}"
+
+# Instalaciones extra para Ubuntu (que no suelen estar en apt o son viejas)
+
+# Starship
+if ! command -v starship &> /dev/null; then
+    echo "🚀 Instalando Starship..."
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# Eza (modern ls) - Intentar instalar si no está
+if ! command -v eza &> /dev/null; then
+    echo "📂 Instalando eza (replacement for ls)..."
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    sudo apt update
+    sudo apt install -y eza
+fi
+
+# Bat (fix alias checking)
+# En Ubuntu 'bat' se instala como 'batcat', crear symlink si no existe
+if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
+    echo "🦇 Creando alias para bat..."
+    mkdir -p ~/.local/bin
+    ln -s /usr/bin/batcat ~/.local/bin/bat
+fi
+
+# LazyGit (Ubuntu install via binary if not in repo)
+if ! command -v lazygit &> /dev/null; then
+    echo "💤 Instalando LazyGit..."
+    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+    curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    tar xf lazygit.tar.gz lazygit
+    sudo install lazygit /usr/local/bin
+    rm lazygit lazygit.tar.gz
+fi
+
+# Git Delta (Better diffs)
+if ! command -v delta &> /dev/null; then
+    echo "⏩ Instalando Git Delta..."
+    DELTA_VERSION=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
+    curl -Lo git-delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
+    sudo dpkg -i git-delta.deb
+    rm git-delta.deb
+fi
+
+# Fd (fix alias checking)
+# En Ubuntu 'fd' se instala como 'fdfind'
+if command -v fdfind &> /dev/null && ! command -v fd &> /dev/null; then
+    echo "🔍 Creando alias para fd..."
+    mkdir -p ~/.local/bin
+    ln -s /usr/bin/fdfind ~/.local/bin/fd
+fi
+
+{{ end -}}
+
+echo "✅ Instalación de paquetes completada."
 {{ end -}}
