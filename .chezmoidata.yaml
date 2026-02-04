@@ -1,8 +1,8 @@
 # Valores por defecto para personalización
-color_barra_adaion: "#FF5733"      # Naranja para trabajo
-color_fuente_adaion: "#FFFFFF"
-color_barra_home: "#33C1FF"        # Azul para personal
-color_fuente_home: "#FFFFFF"
+color_barra_adaion: "#53DD6C"      # Verde para adaion
+color_fuente_adaion: "#000000"
+color_barra_home: "#17bebb"        # Azul para personal
+color_fuente_home: "#000000"
 
 # Paquetes por distribución
 packages:

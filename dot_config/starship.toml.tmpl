@@ -40,6 +40,14 @@ style = "bold green"
 format = "is [$symbol($version)]($style) "
 detect_files = ["package.json", "node_modules"]
 
+[python]
+symbol = "🐍 "
+format = 'via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+style = "yellow bold"
+pyenv_version_name = true
+detect_files = [".python-version", "pyproject.toml", "requirements.txt", ".venv", "setup.py"]
+disabled = false
+
 [docker_context]
 symbol = " "
 style = "bold blue"
