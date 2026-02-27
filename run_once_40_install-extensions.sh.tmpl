@@ -2,36 +2,69 @@
 
 # --- Progress Banner ---
 echo -e "\033[0;34m"
-echo "████████████████     [80%] Fase 5/6: Sincronizando Extensiones VS Code"
+echo "████████████████     [80%] Fase 5/6: Sincronizando Extensiones"
 echo -e "\033[0m"
 
 # Este script se ejecuta solo si cambia su contenido
-echo "🚀 Sincronizando extensiones de VS Code..."
+echo "🚀 Sincronizando extensiones de VS Code y Antigravity..."
 
 extensions=(
 adpyke.codesnap
 astro-build.astro-vscode
+astro-build.houston
+azurite.azurite
+bajdzis.vscode-twig-pack
 bierner.markdown-preview-github-styles
+bmewburn.vscode-intelephense-client
 bradlc.vscode-tailwindcss
 catppuccin.catppuccin-vsc-icons
+chadalen.vscode-jetbrains-icon-theme
+chakrounanas.turbo-console-log
 charliermarsh.ruff
 christian-kohler.npm-intellisense
 christian-kohler.path-intellisense
 chrmarti.regex
+codesandbox-io.codesandbox-projects-theme
 daltonmenezes.aura-theme
 davidanson.vscode-markdownlint
 dbaeumer.vscode-eslint
 docker.docker
 dsznajder.es7-react-js-snippets
+eamodio.gitlens
+eliverlara.andromeda
+enkia.tokyo-night
 esbenp.prettier-vscode
-github.copilot
+figma.figma-vscode-extension
+github.codespaces
 github.copilot-chat
+github.github-vscode-theme
 github.remotehub
 github.vscode-pull-request-github
+hediet.vscode-drawio
+humao.rest-client
+kisstkondoros.vscode-gutter-preview
+linear.linear-connect
+linear.linear-open-issue
+meganrogge.template-string-converter
+mhutchie.git-graph
 midudev.better-svg
 miguelsolorio.fluent-icons
 miguelsolorio.symbols
+monokai.theme-monokai-pro-vscode
+ms-azuretools.vscode-azureappservice
+ms-azuretools.vscode-azurefunctions
+ms-azuretools.vscode-azureresourcegroups
+ms-azuretools.vscode-azurestaticwebapps
+ms-azuretools.vscode-azurestorage
+ms-azuretools.vscode-bicep
+ms-azuretools.vscode-containers
+ms-azuretools.vscode-docker
+ms-ceintl.vscode-language-pack-es
+ms-dotnettools.vscode-dotnet-runtime
 ms-playwright.playwright
+ms-python.autopep8
+ms-python.black-formatter
+ms-python.debugpy
 ms-python.isort
 ms-python.python
 ms-python.vscode-pylance
@@ -42,7 +75,11 @@ ms-vscode-remote.remote-ssh-edit
 ms-vscode-remote.remote-wsl
 ms-vscode-remote.vscode-remote-extensionpack
 ms-vscode.azure-repos
+ms-vscode.cmake-tools
 ms-vscode.copilot-mermaid-diagram
+ms-vscode.cpptools-extension-pack
+ms-vscode.cpptools-themes
+ms-vscode.live-server
 ms-vscode.remote-explorer
 ms-vscode.remote-repositories
 ms-vscode.remote-server
@@ -52,37 +89,67 @@ ms-vsliveshare.vsliveshare
 naumovs.color-highlight
 oderwat.indent-rainbow
 pflannery.vscode-versionlens
+pkief.material-icon-theme
+prisma.prisma
+rapidapi.vscode-rapidapi-client
+rapidapi.vscode-services
+redhat.java
 redhat.vscode-yaml
+ritwickdey.liveserver
 sdras.vue-vscode-snippets
+siddharthkp.codesandbox-black
+snowflake.snowflake-vsc
+svelte.svelte-vscode
 talhabalaj.actual-font-changer
 tamasfe.even-better-toml
 teabyii.ayu
+tomoki1207.pdf
+twxs.cmake
 usernamehw.errorlens
+vercel.turbo-vsc
 vitest.explorer
+vscjava.migrate-java-to-azure
+vscjava.vscode-gradle
+vscjava.vscode-java-debug
+vscjava.vscode-java-dependency
+vscjava.vscode-java-pack
+vscjava.vscode-java-test
+vscjava.vscode-java-upgrade
+vscjava.vscode-maven
+vscode-icons-team.vscode-icons
 vue.volar
 wallabyjs.console-ninja
 wayou.vscode-todo-highlight
 wix.vscode-import-cost
+yzane.markdown-pdf
 yzhang.markdown-all-in-one
+zhuangtongfa.material-theme
+zobo.php-intellisense
 )
 
-if ! command -v code &> /dev/null; then
-  echo "⚠️  VS Code no está instalado. Saltando instalación de extensiones."
-  exit 0
-fi
-
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "████████████████     [80%] Fase 5/6: Sincronizando Extensiones VS Code"
-echo -e "\033[0m"
-
-for ext in "${extensions[@]}"; do
-  # Comprobar si ya está instalada para no perder tiempo
-  if ! code --list-extensions | grep -iq "^$ext$"; then
-    echo "Installing $ext..."
-    code --install-extension "$ext" --force
+install_extensions() {
+  local cmd=$1
+  local name=$2
+  
+  if ! command -v "$cmd" &> /dev/null; then
+    echo "⚠️  $name no está instalado. Saltando."
+    return
   fi
-done
 
-echo "✅ Extensiones actualizadas."
+  echo "📦 Sincronizando extensiones en $name..."
+  local installed_exts
+  installed_exts=$("$cmd" --list-extensions)
+
+  for ext in "${extensions[@]}"; do
+    if ! echo "$installed_exts" | grep -iq "^$ext$"; then
+      echo "Installing $ext in $name..."
+      "$cmd" --install-extension "$ext" --force || echo "❌ No se pudo instalar $ext en $name"
+    fi
+  done
+}
+
+install_extensions "code" "VS Code"
+install_extensions "antigravity" "Antigravity"
+
+echo "✅ Sincronización finalizada."
 
