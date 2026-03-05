@@ -389,3 +389,10 @@ A: Not recommended. Sync is for configuration only. Application data (caches, da
 
 **Q: How do I exclude certain files?**
 A: Add them to `.chezmoiignore` or comment out their `sync_config` line in the script.
+
+**Q: What if the sync script fails?**
+A: Check the sync log with: `cat /tmp/chezmoi-sync-*.log` (most recent timestamp). Common issues:
+- Missing directories: Ensure `~/.config/Code/User/` exists before running sync
+- File permission issues: Check file ownership with `ls -la`
+- Template validation errors: Run `chezmoi dump 2>&1 | head -50` to see the error
+- Git errors: Check remote setup with `git remote -v` in the chezmoi directory

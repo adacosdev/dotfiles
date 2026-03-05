@@ -4,6 +4,24 @@
 # 
 # This script detects changes in managed application configs (VS Code, Cursor, Warp, etc.)
 # and syncs them back to the chezmoi repository, optionally committing and pushing changes.
+#
+# The script works by:
+# 1. Tracking file modification times since last sync (using ~/.cache/chezmoi-sync-timestamp)
+# 2. For changed files, syncing to the chezmoi directory and preserving templates
+# 3. Validating all templates with 'chezmoi dump' before committing
+# 4. Creating git commits with 'sync:' prefix for easy filtering
+# 5. Optionally pushing changes to the remote repository
+#
+# Managed applications:
+# - VS Code & Cursor & Antigravity: Settings, keybindings, snippets
+# - Warp Terminal: User preferences (managed keys only)
+# - Git: ~/.gitconfig
+# - Starship: ~/.config/starship.toml
+# - Zsh: Shell configuration files
+#
+# Exit codes:
+#  0: Success
+#  1: Template validation failed or git error
 
 set -eo pipefail
 
@@ -119,10 +137,11 @@ sync_config \
   "Antigravity keybindings"
 
 # Warp Terminal Settings
+# Note: Warp stores both runtime state and user preferences in a single JSON file.
+# We only sync the managed keys and preserve template variables (e.g., {{ .chezmoi.homeDir }})
 echo -e "${BLUE}Checking Warp Terminal configuration...${NC}"
 if [[ -f "$HOME_DIR/.config/warp-terminal/user_preferences.json" ]]; then
-  # For Warp, we need to extract only the user preferences we care about
-  # and preserve the template variables
+  # Extract only the user preferences we care about and preserve the template variables
   warp_dest="$CHEZMOI_DIR/dot_config/warp-terminal/user_preferences.json.tmpl"
   
   if [[ "$HOME_DIR/.config/warp-terminal/user_preferences.json" -nt "$SYNC_TIMESTAMP_FILE" ]]; then
@@ -133,8 +152,8 @@ if [[ -f "$HOME_DIR/.config/warp-terminal/user_preferences.json" ]]; then
       cp "$warp_dest" "${warp_dest}.backup-$(date +%s)"
     fi
     
-    # Sync: This needs careful handling since Warp stores runtime data
-    # We'll copy and re-apply template variables
+    # Sync: This needs careful handling since Warp stores runtime data mixed with config
+    # Strategy: Extract only managed keys and preserve any template variables (like {{ .chezmoi.homeDir }})
     python3 << EOF
 import json
 import sys
@@ -142,22 +161,24 @@ import re
 import os
 
 try:
-    # Get variables from bash
+    # Get variables from bash environment
     home_dir = "$HOME_DIR"
     chezmoi_dir = "$CHEZMOI_DIR"
     
-    # Read current Warp prefs
+    # Read the current user preferences from Warp's config directory
     with open(f'{home_dir}/.config/warp-terminal/user_preferences.json', 'r') as f:
         warp_prefs = json.load(f)
     
-    # Read existing chezmoi template to preserve template variables
+    # Read existing template to preserve any chezmoi template variables
+    # This allows us to keep things like {{ .chezmoi.homeDir }} in the MCP path
     try:
         with open(f'{chezmoi_dir}/dot_config/warp-terminal/user_preferences.json.tmpl', 'r') as f:
             template_content = f.read()
     except:
         template_content = None
     
-    # Extract keys we want to preserve/update
+    # Only sync these keys to avoid syncing transient runtime state
+    # (API quotas, UI state, experimental flags, etc.)
     managed_keys = {
         'Theme', 'OverrideOpacity', 'TelemetryEnabled', 'CrashReportingEnabled',
         'Notifications', 'NLDInTerminalEnabled', 'WorkflowsBoxOpen',
@@ -244,22 +265,25 @@ else
   exit 1
 fi
 
-# Git operations
+# Git operations: Stage, commit, and optionally push changes
+# The --auto-commit flag determines whether we automatically commit or just show instructions
 if [[ "$CHANGES_MADE" == true ]]; then
   echo -e "\n${BLUE}Processing changes...${NC}"
   
   cd "$CHEZMOI_DIR"
   
-  # Show what changed
+  # Display the changes to the user
   echo -e "${YELLOW}Changes detected:${NC}"
   git status --short
   
   if [[ "$AUTO_COMMIT" == true ]]; then
+    # Stage all changes and create a commit with meaningful message
     echo -e "\n${BLUE}Auto-committing changes...${NC}"
     
     git add -A
     
-    # Create meaningful commit message
+    # Create a commit message with 'sync:' prefix for easy filtering
+    # Includes timestamp and list of first 5 changed files
     summary=$(git diff --cached --name-only | head -5 | tr '\n' ', ' | sed 's/,$//')
     commit_msg="sync: Update configs from UI changes ($(date +%Y-%m-%d\ %H:%M:%S))
 
