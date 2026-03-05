@@ -1,28 +1,52 @@
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "██████████           [50%] Fase 3/6: Instalando Runtimes (Node/Python)"
-echo -e "\033[0m"
+set -eo pipefail
 
-echo "🛠️ Instalando entornos (fnm, pyenv)..."
+# =============================================================================
+# Progress Bar Helper Functions
+# =============================================================================
+show_progress() {
+  local msg="$1"
+  local pct="${2:-0}"
+  local bar_length=30
+  local filled=$((pct * bar_length / 100))
+  local empty=$((bar_length - filled))
+  
+  local bar="["
+  for ((i = 0; i < filled; i++)); do bar+="="; done
+  for ((i = 0; i < empty; i++)); do bar+="-"; done
+  bar+="]"
+  
+  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+}
+
+show_progress_done() {
+  echo ""
+  echo "✅ $1"
+}
+
+# =============================================================================
+# Main Script: Install Runtimes (Node/Python)
+# =============================================================================
+show_progress "🛠️ Installing runtimes" 50
 
 # --- FNM (Fast Node Manager) ---
 if ! command -v fnm &> /dev/null; then
-    echo "📦 Instalando fnm..."
+    show_progress "🛠️ Installing runtimes: fnm" 52
     curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
-    # Export path temporarily to use it in the next step
     export PATH="$HOME/.local/share/fnm:$PATH"
     eval "$(fnm env)"
-    echo "🟢 Instalando Node.js LTS..."
+    
+    show_progress "🛠️ Installing runtimes: Node.js LTS" 56
     fnm install --lts
     fnm use --lts
 else
-    echo "✅ fnm ya está instalado."
+    show_progress "🛠️ Installing runtimes: fnm (already installed)" 56
 fi
 
 # --- PYENV (Python Version Manager) ---
 if [ ! -d "$HOME/.pyenv" ]; then
-    echo "🐍 Instalando pyenv..."
+    show_progress "🛠️ Installing runtimes: pyenv dependencies" 58
     # Dependencias necesarias para compilar Python en varias distros
     {{ if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
     sudo apt update && sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -30,7 +54,11 @@ if [ ! -d "$HOME/.pyenv" ]; then
     sudo pacman -S --noconfirm base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libxml2 libffi
     {{ end -}}
     
+    show_progress "🛠️ Installing runtimes: pyenv" 62
     curl https://pyenv.run | bash
 else
-    echo "✅ pyenv ya está instalado."
+    show_progress "🛠️ Installing runtimes: pyenv (already installed)" 62
 fi
+
+show_progress_done "Runtime environments installed successfully"
+{{ end -}}

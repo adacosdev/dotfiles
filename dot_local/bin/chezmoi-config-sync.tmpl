@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# chezmoi-config-sync: Command-line wrapper for configuration syncing
+# This script is installed to ~/.local/bin for easy access
+
+set -eo pipefail
+
+# Get the actual sync script location
+CHEZMOI_DIR="${CHEZMOI_DIR:-$HOME/.local/share/chezmoi}"
+SYNC_SCRIPT="$CHEZMOI_DIR/run_once_chezmoi_config_sync_install.sh"
+
+if [[ ! -f "$SYNC_SCRIPT" ]]; then
+  echo "Error: Sync script not found at $SYNC_SCRIPT"
+  echo "Make sure chezmoi is initialized properly"
+  exit 1
+fi
+
+# Run the actual sync script with all arguments passed through
+exec bash "$SYNC_SCRIPT" "$@"

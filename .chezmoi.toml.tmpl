@@ -1,6 +1,10 @@
 {{- $name := promptStringOnce . "name" "Full name" "Adrián Acosa Sánchez" -}}
-{{- $email := promptStringOnce . "email" "Email address" "adrianacosasanchez@proton.me" -}}
-{{- $entorno := promptStringOnce . "entorno" "Entorno (personal/adaion)" "personal" -}}
+{{- $entorno := promptChoiceOnce . "entorno" "Environment (personal/work)" (list "personal" "adaion") -}}
+{{- $defaultEmail := "adrianacosasanchez@proton.me" -}}
+{{- if eq $entorno "adaion" -}}
+{{-   $defaultEmail = "adrian.acosa@adaion.energy" -}}
+{{- end -}}
+{{- $email := promptStringOnce . "email" "Email address" $defaultEmail -}}
 
 [data]
 name = {{ $name | quote }}
@@ -10,6 +14,13 @@ entorno = {{ $entorno | quote }}
 [git]
 autoCommit = true
 autoPush = true
+
+[edit]
+command = "code"
+args = ["--wait"]
+
+[diff]
+pager = "delta"
 
 [merge]
 command = "code"

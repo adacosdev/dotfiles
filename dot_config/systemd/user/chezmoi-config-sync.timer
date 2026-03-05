@@ -1,0 +1,14 @@
+[Unit]
+Description=Periodic chezmoi configuration sync timer
+Requires=chezmoi-config-sync.service
+
+[Timer]
+# Run every 5 minutes
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+# Randomize by up to 30 seconds to avoid thundering herd
+RandomizedDelaySec=30s
+
+[Install]
+WantedBy=timers.target

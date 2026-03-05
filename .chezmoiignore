@@ -1,0 +1,14 @@
+README.md
+docs/
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS-specific: Ignore scripts on non-Linux systems
+{{ if ne .chezmoi.os "linux" }}
+run_*
+{{ end }}

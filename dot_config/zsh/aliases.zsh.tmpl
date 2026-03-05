@@ -1,74 +1,97 @@
-# Git Shortcuts
-alias gs="git status" # > View git status
-alias ga="git add ." # > Add all changes to git
-alias gc="git commit -m" # > Create a commit with message
-alias gp="git push" # > Push changes to repository
-{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
-alias lg="lazygit" # > Terminal UI for Git
-{{ else if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
-# Lazygit might need manual install/PPA on some Ubuntus, but let's assume it's there or user installs it
-alias lg="lazygit" # > Terminal UI for Git
-{{ end -}}
+# =============================================================================
+# ~/.config/zsh/aliases.zsh — Shell Aliases
+# Git aliases moved to .gitconfig — use 'git <alias>' instead
+# =============================================================================
 
-# Node/Project Shortcuts
-alias ni="npm install" # > Install node dependencies
-alias nd="npm run dev" # > Start node development server
-alias nb="npm run build" # > Build node project
+# ---------------------------------------------------------------------------
+# Safety Nets (confirm before destructive operations)
+# ---------------------------------------------------------------------------
+alias rm='rm -i'    # > Confirm before removing files
+alias cp='cp -i'    # > Confirm before overwriting
+alias mv='mv -i'    # > Confirm before overwriting
 
-# System Shortcuts
-alias cls="clear" # > Clear terminal
+# ---------------------------------------------------------------------------
+# Navigation
+# ---------------------------------------------------------------------------
+alias ..="cd .."         # > Go up one directory
+alias ...="cd ../.."     # > Go up two directories
+alias ....="cd ../../.." # > Go up three directories
 
+# ---------------------------------------------------------------------------
+# Git/Version Control
+# ---------------------------------------------------------------------------
+alias lg="lazygit"  # > Terminal UI for Git (lazygit command, not git alias)
 
+# ---------------------------------------------------------------------------
+# Node.js / Development
+# ---------------------------------------------------------------------------
+alias ni="npm install"   # > Install node dependencies
+alias nd="npm run dev"   # > Start development server
+alias nb="npm run build" # > Build project
 
+# ---------------------------------------------------------------------------
+# Docker
+# ---------------------------------------------------------------------------
+alias d="docker"                           # > Docker base command
+alias dc="docker compose"                  # > Docker Compose v2
+alias dcu="docker compose up -d"           # > Start services in background
+alias dcd="docker compose down"            # > Stop and remove services
+alias dcl="docker compose logs -f"         # > Follow logs
+alias dcu-rebuild="docker compose up -d --build"  # > Rebuild and start
 
-# Fast Navigation
-alias ..="cd .." # > Go up one directory level
-alias ...="cd ../.." # > Go up two directory levels
+# ---------------------------------------------------------------------------
+# System & Disk
+# ---------------------------------------------------------------------------
+alias cls="clear"  # > Clear terminal
+alias df='df -h'   # > Disk free (human-readable)
+alias du='du -sh'  # > Disk usage (summary, human-readable)
+alias free='free -h'  # > Memory usage (human-readable)
+alias ports='sudo lsof -i -P -n | grep LISTEN'  # > View listening ports
 
-# Docker (Time saver)
-alias d="docker" # > Docker base command
-alias dc="docker-compose" # > Docker-compose base command
-alias dcu="docker-compose up -d" # > Start docker services in background
-alias dcd="docker-compose down" # > Stop and remove docker services
-alias dcl="docker-compose logs -f" # > View docker logs in real time
-
-# Network Tools (Check occupied ports)
-alias ports="sudo lsof -i -P -n | grep LISTEN" # > View listening ports
-
-# Update System (Distro Agnostic)
-{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
-alias update-all='sudo pacman -Syu && yay -Sua && chezmoi update' # > Update system and dotfiles (Arch)
-{{ else if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
-alias update-all='sudo apt update && sudo apt upgrade -y && chezmoi update' # > Update system and dotfiles (Debian/Ubuntu)
-{{ else -}}
-alias update-all='chezmoi update' # > Update system not supported, just dotfiles
-{{ end -}}
-
-# Bat instead of cat (Smart check)
-if command -v bat &> /dev/null; then
-    alias cat='bat --paging=never' # > Cat with syntax highlighting (bat)
-elif command -v batcat &> /dev/null; then
-    alias cat='batcat --paging=never' # > Cat with syntax highlighting (batcat)
-fi
-
-
-# Eza instead of ls (Smart check)
-if command -v eza &> /dev/null; then
-    alias ls='eza --icons --group-directories-first' # > List files with icons (eza)
-    alias ll='eza -lh --icons --grid --group-directories-first' # > List details with icons (eza)
-    alias tree='eza --tree --icons' # > Tree view with icons (eza)
-elif command -v exa &> /dev/null; then
-    # Compatibility with older versions
-    alias ls='exa --icons --group-directories-first' # > List files with icons (exa)
-    alias ll='exa -lh --icons --grid --group-directories-first' # > List details with icons (exa)
-    alias tree='exa --tree --icons' # > Tree view with icons (exa)
-else
-    # Fallback to standard ls
-    alias ll='ls -la --color=auto' # > List details (standard)
-fi
-
-alias ce='chezmoi edit' # > Edit chezmoi config
-alias ca='chezmoi apply' # > Apply chezmoi changes
-alias cdz='chezmoi cd' # > Change to chezmoi directory
+# ---------------------------------------------------------------------------
+# Chezmoi Dotfiles Management
+# ---------------------------------------------------------------------------
+alias ce='chezmoi edit'   # > Edit chezmoi source files
+alias ca='chezmoi apply'  # > Apply chezmoi changes
+alias cdz='chezmoi cd'    # > Change to chezmoi directory
 alias cs='chezmoi status' # > View chezmoi status
-alias capply='chezmoi apply && source ~/.zshrc' # > Apply chezmoi and reload terminal
+alias capply='chezmoi apply && source ~/.zshrc'  # > Apply and reload zsh
+
+# ---------------------------------------------------------------------------
+# System Updates (Distro-specific)
+# ---------------------------------------------------------------------------
+{{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
+alias update-all='sudo pacman -Syu && yay -Sua && chezmoi update'  # > Full update (Arch)
+{{ else if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
+alias update-all='sudo apt update && sudo apt upgrade -y && chezmoi update'  # > Full update (Debian)
+{{ else -}}
+alias update-all='chezmoi update'  # > Update dotfiles only
+{{ end -}}
+
+# ---------------------------------------------------------------------------
+# Smart Tool Replacements
+# ---------------------------------------------------------------------------
+# Use bat instead of cat when available (syntax highlighting)
+if command -v bat &>/dev/null; then
+  alias cat='bat --paging=never'  # > Cat with syntax highlighting
+elif command -v batcat &>/dev/null; then
+  alias cat='batcat --paging=never'  # > Cat with syntax highlighting (Ubuntu)
+fi
+
+# Use eza instead of ls when available (icons, colors)
+if command -v eza &>/dev/null; then
+  alias ls='eza --icons --group-directories-first'                    # > List with icons
+  alias ll='eza -lh --icons --grid --group-directories-first'         # > Detailed list
+  alias la='eza -lah --icons --group-directories-first'               # > List all (hidden)
+  alias tree='eza --tree --icons'                                     # > Tree view with icons
+else
+  # Fallback to standard ls
+  alias ll='ls -la --color=auto'  # > List details (standard)
+  alias la='ls -lAh --color=auto'  # > List all (standard)
+fi
+
+# ---------------------------------------------------------------------------
+# Utility Functions (Quick operations)
+# ---------------------------------------------------------------------------
+# Create directory and cd into it
+mkcd() { mkdir -p "$1" && cd "$1"; }  # > Create dir and cd into it

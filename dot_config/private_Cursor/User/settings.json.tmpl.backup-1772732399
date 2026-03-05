@@ -273,6 +273,9 @@
 	"remote.autoForwardPortsSource": "hybrid",
 	"chat.mcp.gallery.enabled": true,
 	"editor.fontSize": 16,
+	"cursor.cpp.disabledLanguages": ["scminput", "http"],
+	"cursor.composer.usageSummaryDisplay": "always",
+	"git.autofetch": true,
 	"workbench.colorTheme": "Houston",
 	"terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font'",
 	"workbench.colorCustomizations": {

@@ -1,14 +1,93 @@
 [user]
 	name = {{ .name }}
-{{ if eq .entorno "adaion" -}}
-	email = adrian.acosa@adaion.energy
-{{ else -}}
-	email = adrianacosasanchez@proton.me
-{{ end -}}
+	email = {{ .email }}
 
 [core]
 	editor = code --wait
 	pager = delta
+	autocrlf = input
+	whitespace = fix
+
 [init]
 	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	default = current
+	autoSetupRemote = true
+	followTags = true
+
+[fetch]
+	prune = true
+	pruneTags = true
+
+[rebase]
+	autoStash = true
+	autoSquash = true
+
+[rerere]
+	enabled = true
+
+[branch]
+	sort = -committerdate
+
+[tag]
+	sort = -version:refname
+
+[column]
+	ui = auto
+
+[interactive]
 	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = true
+	dark = true
+	syntax-theme = Dracula
+	file-style = bold yellow ul
+	hunk-header-style = omit
+	features = decorations
+
+[diff]
+	colorMoved = default
+	algorithm = histogram
+	renames = true
+
+[merge]
+	conflictstyle = zdiff3
+	tool = code
+
+[mergetool "code"]
+	cmd = code --wait --merge $REMOTE $LOCAL $BASE $MERGED
+
+# =============================================================================
+# Git Aliases — Commonly used shortcuts
+# =============================================================================
+[alias]
+	# Status and Information
+	st = status -sb
+	br = branch -vv
+	ci = commit
+	co = checkout
+	sw = switch
+
+	# History and Logs
+	lg = log --graph --oneline --decorate --all
+	ll = log --graph --pretty=format:'%C(yellow)%h%Creset %C(auto)%d%Creset %s %C(cyan)(%cr)%Creset %C(blue)<%an>%Creset' --abbrev-commit
+	last = log -1 HEAD --stat
+	undo = reset --soft HEAD~1
+	unstage = reset HEAD --
+
+	# Commits
+	amend = commit --amend --no-edit
+	wip = !git add -A && git commit -m 'wip: work in progress'
+
+	# Reference Lists
+	branches = branch -a --sort=-committerdate
+	stashes = stash list
+	tags = tag -l --sort=-version:refname
+	aliases = config --get-regexp ^alias\\.

@@ -1,0 +1,9 @@
+// Cursor IDE Keybindings
+// These are custom keybindings for Cursor
+[
+  {
+    "key": "ctrl+shift+f6",
+    "command": "testing.coverageSelected",
+    "when": "testing.hasCoverableTests && !testing.isRunning && view == 'workbench.view.testing'"
+  }
+]

@@ -1,16 +1,40 @@
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
-# {{ if eq .chezmoi.os "linux" }}
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "███████              [35%] Fase 2/6: Configurando Docker"
-echo -e "\033[0m"
+set -eo pipefail
 
-echo "🐳 Configurando Docker..."
+# =============================================================================
+# Progress Bar Helper Functions
+# =============================================================================
+show_progress() {
+  local msg="$1"
+  local pct="${2:-0}"
+  local bar_length=30
+  local filled=$((pct * bar_length / 100))
+  local empty=$((bar_length - filled))
+  
+  local bar="["
+  for ((i = 0; i < filled; i++)); do bar+="="; done
+  for ((i = 0; i < empty; i++)); do bar+="-"; done
+  bar+="]"
+  
+  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+}
+
+show_progress_done() {
+  echo ""
+  echo "✅ $1"
+}
+
+# =============================================================================
+# Main Script: Configure Docker
+# =============================================================================
+show_progress "🐳 Configuring Docker" 35
 
 install_docker() {
     {{ if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
     sudo apt update
     sudo apt install -y docker.io docker-compose
+    sudo systemctl enable --now docker
     sudo usermod -aG docker $USER
     {{ else if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
     sudo pacman -S --noconfirm docker docker-compose
@@ -24,9 +48,10 @@ install_docker() {
 }
 
 if ! command -v docker &> /dev/null; then
+    show_progress "🐳 Configuring Docker: installing" 40
     install_docker
-    echo "✅ Docker instalado. NOTA: Reinicia sesión para aplicar permisos de grupo."
+    show_progress_done "Docker installed. NOTE: Restart your session to apply group permissions."
 else
-    echo "✅ Docker ya está instalado."
+    show_progress_done "Docker already installed."
 fi
-# {{ end }}
+{{ end -}}

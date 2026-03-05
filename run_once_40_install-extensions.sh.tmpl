@@ -1,12 +1,34 @@
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
+set -eo pipefail
 
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "████████████████     [80%] Fase 5/6: Sincronizando Extensiones"
-echo -e "\033[0m"
+# =============================================================================
+# Progress Bar Helper Functions
+# =============================================================================
+show_progress() {
+  local msg="$1"
+  local pct="${2:-0}"
+  local bar_length=30
+  local filled=$((pct * bar_length / 100))
+  local empty=$((bar_length - filled))
+  
+  local bar="["
+  for ((i = 0; i < filled; i++)); do bar+="="; done
+  for ((i = 0; i < empty; i++)); do bar+="-"; done
+  bar+="]"
+  
+  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+}
 
-# Este script se ejecuta solo si cambia su contenido
-echo "🚀 Sincronizando extensiones de VS Code y Antigravity..."
+show_progress_done() {
+  echo ""
+  echo "✅ $1"
+}
+
+# =============================================================================
+# Main Script: Sync Editor Extensions
+# =============================================================================
+show_progress "🔌 Syncing editor extensions" 80
 
 extensions=(
 adpyke.codesnap
@@ -130,26 +152,30 @@ zobo.php-intellisense
 install_extensions() {
   local cmd=$1
   local name=$2
+  local total=${#extensions[@]}
   
   if ! command -v "$cmd" &> /dev/null; then
-    echo "⚠️  $name no está instalado. Saltando."
     return
   fi
 
-  echo "📦 Sincronizando extensiones en $name..."
   local installed_exts
-  installed_exts=$("$cmd" --list-extensions)
+  installed_exts=$("$cmd" --list-extensions 2>/dev/null || echo "")
+  local count=0
 
   for ext in "${extensions[@]}"; do
+    count=$((count + 1))
+    pct=$((80 + count * 20 / total))
+    
     if ! echo "$installed_exts" | grep -iq "^$ext$"; then
-      echo "Installing $ext in $name..."
-      "$cmd" --install-extension "$ext" --force || echo "❌ No se pudo instalar $ext en $name"
+      show_progress "🔌 Installing in $name: $ext" "$pct"
+      "$cmd" --install-extension "$ext" --force 2>/dev/null || true
     fi
   done
 }
 
 install_extensions "code" "VS Code"
+install_extensions "cursor" "Cursor"
 install_extensions "antigravity" "Antigravity"
 
-echo "✅ Sincronización finalizada."
-
+show_progress_done "Editor extensions synced successfully"
+{{ end -}}

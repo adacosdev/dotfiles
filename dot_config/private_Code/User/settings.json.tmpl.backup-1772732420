@@ -284,6 +284,5 @@
     "statusBar.background": "#17bebb",
     "statusBar.foreground": "#000000"
   },
-  "test.syncIndicator": "test-sync-123",
-  "test.autoSyncTest": "timer-triggered"
+  "test.syncIndicator": "test-sync-123"
 }

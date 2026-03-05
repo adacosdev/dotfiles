@@ -1,14 +1,35 @@
 #!/bin/bash
+set -eo pipefail
 
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "█████████████        [65%] Fase 4/6: Instalando Tipografías"
-echo -e "\033[0m"
+# =============================================================================
+# Progress Bar Helper Functions
+# =============================================================================
+show_progress() {
+  local msg="$1"
+  local pct="${2:-0}"
+  local bar_length=30
+  local filled=$((pct * bar_length / 100))
+  local empty=$((bar_length - filled))
+  
+  local bar="["
+  for ((i = 0; i < filled; i++)); do bar+="="; done
+  for ((i = 0; i < empty; i++)); do bar+="-"; done
+  bar+="]"
+  
+  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+}
 
-# 1. DETECCIÓN DE DEPENDENCIAS
-echo "🔍 Comprobando dependencias del sistema..."
+show_progress_done() {
+  echo ""
+  echo "✅ $1"
+}
 
-# Función para instalar paquetes según el gestor disponible
+# =============================================================================
+# Main Script: Install Nerd Fonts
+# =============================================================================
+show_progress "📝 Installing fonts" 65
+
+# Check dependencies
 install_pkg() {
     if command -v apt &> /dev/null; then
         sudo apt update && sudo apt install -y "$@"
@@ -22,22 +43,21 @@ install_pkg() {
     fi
 }
 
-# Lista de herramientas necesarias
 deps=("curl" "unzip" "fontconfig")
 missing_deps=()
 
 for dep in "${deps[@]}"; do
-    if ! command -v "$dep" &> /dev/null; then
+    if ! command -v "$dep" &> /dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$dep"; then
         missing_deps+=("$dep")
     fi
 done
 
 if [ ${#missing_deps[@]} -ne 0 ]; then
-    echo "📦 Instalando dependencias faltantes: ${missing_deps[*]}"
+    show_progress "📝 Installing fonts: dependencies ${missing_deps[*]}" 67
     install_pkg "${missing_deps[@]}"
 fi
 
-# 2. CONFIGURACIÓN DE FUENTES
+# Font installation
 FONT_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONT_DIR"
 
@@ -48,33 +68,31 @@ fonts=(
     "Iosevka"
 )
 
-echo "📊 Comprobando fuentes..."
+show_progress "📝 Installing fonts: checking" 68
 need_update=false
 
 for font in "${fonts[@]}"; do
-    if ls "$FONT_DIR" | grep -iq "$font"; then
-        echo "✅ $font ya está instalada."
+    if ls "$FONT_DIR" 2>/dev/null | grep -iq "$font"; then
+        : # Already installed
     else
-        echo "📥 Instalando $font..."
+        pct=$((68 + $(echo "${fonts[@]}" | grep -o "$font" | head -1 | wc -c)))
+        show_progress "📝 Installing fonts: $font" "$pct"
+        
         TEMP_DIR=$(mktemp -d)
         URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.zip"
         
-        if curl -L "$URL" -o "$TEMP_DIR/font.zip"; then
-            unzip -o "$TEMP_DIR/font.zip" -d "$TEMP_DIR"
+        if curl -L "$URL" -o "$TEMP_DIR/font.zip" 2>/dev/null; then
+            unzip -o "$TEMP_DIR/font.zip" -d "$TEMP_DIR" >/dev/null 2>&1
             find "$TEMP_DIR" -name "*.[ot]tf" -exec cp {} "$FONT_DIR/" \;
             need_update=true
-            echo "✨ $font instalada con éxito."
-        else
-            echo "❌ Error al descargar $font."
         fi
         rm -rf "$TEMP_DIR"
     fi
 done
 
 if [ "$need_update" = true ]; then
-    echo "🔄 Actualizando caché de fuentes..."
+    show_progress "📝 Installing fonts: updating cache" 79
     fc-cache -f
-    echo "🚀 ¡Proceso finalizado!"
-else
-    echo "😎 Todo al día."
 fi
+
+show_progress_done "Fonts installed successfully"

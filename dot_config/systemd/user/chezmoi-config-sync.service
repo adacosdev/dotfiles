@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync chezmoi configurations from application UI changes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=%u
+ExecStart=%h/.local/bin/chezmoi-config-sync --auto-commit
+StandardOutput=journal
+StandardError=journal

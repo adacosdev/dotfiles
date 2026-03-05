@@ -1,12 +1,34 @@
 {{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
+set -eo pipefail
 
-# --- Progress Banner ---
-echo -e "\033[0;34m"
-echo "████                 [20%] Fase 1/6: Instalando Paquetes del Sistema"
-echo -e "\033[0m"
+# =============================================================================
+# Progress Bar Helper Functions
+# =============================================================================
+show_progress() {
+  local msg="$1"
+  local pct="${2:-0}"
+  local bar_length=30
+  local filled=$((pct * bar_length / 100))
+  local empty=$((bar_length - filled))
+  
+  local bar="["
+  for ((i = 0; i < filled; i++)); do bar+="="; done
+  for ((i = 0; i < empty; i++)); do bar+="-"; done
+  bar+="]"
+  
+  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+}
 
-echo "📦 Iniciando instalación de paquetes..."
+show_progress_done() {
+  echo ""
+  echo "✅ $1"
+}
+
+# =============================================================================
+# Main Script: Install System Packages
+# =============================================================================
+show_progress "📦 Installing packages" 5
 
 # --- Arch Linux / EndeavourOS ---
 {{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
@@ -18,20 +40,21 @@ packages=(
 
 # Bootstrap yay
 if ! command -v yay &> /dev/null; then
-    echo "🔧 Instalando yay..."
+    show_progress "📦 Installing packages: yay bootstrap" 10
     sudo pacman -S --needed --noconfirm base-devel git
     sudo pacman -Sy --noconfirm archlinux-keyring
-    git clone https://aur.archlinux.org/yay.git /tmp/yay
-    cd /tmp/yay
-    makepkg -si --noconfirm
-    cd -
+    (
+      git clone https://aur.archlinux.org/yay.git /tmp/yay
+      cd /tmp/yay
+      makepkg -si --noconfirm
+    )
     rm -rf /tmp/yay
 fi
 
-echo "🔄 Sincronizando repositorios..."
+show_progress "📦 Installing packages: syncing repos" 15
 sudo pacman -Sy --noconfirm archlinux-keyring
 
-echo "📥 Instalando paquetes con yay..."
+show_progress "📦 Installing packages: yay packages" 20
 yay -S --needed --noconfirm "${packages[@]}"
 
 # --- Debian / Ubuntu ---
@@ -42,32 +65,31 @@ packages=(
 {{ end -}}
 )
 
-echo "🔄 Preparando repositorios externos..."
+show_progress "📦 Installing packages: setting up repositories" 10
+
 # VS Code Repo
 if ! command -v code &> /dev/null; then
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-    sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg
+    sudo install -D -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
     sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
-    rm -f packages.microsoft.gpg
+    rm -f /tmp/packages.microsoft.gpg
 fi
 
-echo "🔄 Actualizando repositorios APT..."
+show_progress "📦 Installing packages: updating apt" 15
 sudo apt update
 
-echo "📥 Instalando paquetes con apt..."
+show_progress "📦 Installing packages: installing apt packages" 25
 sudo apt install -y "${packages[@]}"
-
-# Instalaciones extra para Ubuntu (que no suelen estar en apt o son viejas)
 
 # Starship
 if ! command -v starship &> /dev/null; then
-    echo "🚀 Instalando Starship..."
+    show_progress "📦 Installing packages: starship" 50
     curl -sS https://starship.rs/install.sh | sh -s -- -y
 fi
 
-# Eza (modern ls) - Intentar instalar si no está
+# Eza (modern ls)
 if ! command -v eza &> /dev/null; then
-    echo "📂 Instalando eza (replacement for ls)..."
+    show_progress "📦 Installing packages: eza" 55
     sudo mkdir -p /etc/apt/keyrings
     wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
     echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
@@ -77,39 +99,36 @@ if ! command -v eza &> /dev/null; then
 fi
 
 # Bat (fix alias checking)
-# En Ubuntu 'bat' se instala como 'batcat', crear symlink si no existe
 if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
-    echo "🦇 Creando alias para bat..."
+    show_progress "📦 Installing packages: bat symlink" 60
     mkdir -p ~/.local/bin
     ln -sf /usr/bin/batcat ~/.local/bin/bat
 fi
 
-# LazyGit (Ubuntu install via binary if not in repo)
+# LazyGit
 if ! command -v lazygit &> /dev/null; then
-    echo "💤 Instalando LazyGit..."
+    show_progress "📦 Installing packages: lazygit" 65
     LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
-    curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-    tar xf lazygit.tar.gz lazygit
-    sudo install lazygit /usr/local/bin
-    rm lazygit lazygit.tar.gz
+    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
+    sudo install /tmp/lazygit /usr/local/bin
+    rm /tmp/lazygit /tmp/lazygit.tar.gz
 fi
 
-# Git Delta (Better diffs)
+# Git Delta
 if ! command -v delta &> /dev/null; then
-    echo "⏩ Instalando Git Delta..."
+    show_progress "📦 Installing packages: git-delta" 70
     DELTA_VERSION=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
-    curl -Lo git-delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
-    sudo dpkg -i git-delta.deb
-    rm git-delta.deb
+    curl -Lo /tmp/git-delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
+    sudo dpkg -i /tmp/git-delta.deb
+    rm /tmp/git-delta.deb
 fi
 
 # Fd (fix alias checking)
-# En Ubuntu 'fd' se instala como 'fdfind'
 if command -v fdfind &> /dev/null && ! command -v fd &> /dev/null; then
-    echo "🔍 Creando alias para fd..."
+    show_progress "📦 Installing packages: fd symlink" 75
     mkdir -p ~/.local/bin
     ln -sf /usr/bin/fdfind ~/.local/bin/fd
-# En algunos sistemas fd ya apunta a fdfind, asegurarse
 elif command -v fdfind &> /dev/null && [ ! -L ~/.local/bin/fd ]; then
     mkdir -p ~/.local/bin
     ln -sf /usr/bin/fdfind ~/.local/bin/fd
@@ -117,5 +136,5 @@ fi
 
 {{ end -}}
 
-echo "✅ Instalación de paquetes completada."
+show_progress_done "System packages installed successfully"
 {{ end -}}

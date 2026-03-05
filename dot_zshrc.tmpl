@@ -1,0 +1,50 @@
+# =============================================================================
+# ~/.zshrc — Main ZSH Configuration
+# Managed by chezmoi
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Zsh Options
+# ---------------------------------------------------------------------------
+setopt AUTO_CD              # cd by typing directory name
+setopt AUTO_PUSHD           # push dirs to stack automatically
+setopt PUSHD_IGNORE_DUPS    # no duplicates in dir stack
+setopt PUSHD_SILENT         # don't print stack after pushd/popd
+setopt CORRECT              # suggest corrections for mistyped commands
+setopt INTERACTIVE_COMMENTS # allow comments in interactive shell
+setopt NO_BEEP              # disable beep on error
+setopt EXTENDED_GLOB        # extended globbing (#, ~, ^)
+setopt GLOB_DOTS            # include dotfiles in glob matches
+
+# ---------------------------------------------------------------------------
+# History Configuration
+# ---------------------------------------------------------------------------
+HISTFILE="${HOME}/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+
+setopt EXTENDED_HISTORY       # save timestamp and duration
+setopt HIST_EXPIRE_DUPS_FIRST # expire duplicates first when trimming
+setopt HIST_IGNORE_DUPS       # don't record duplicates
+setopt HIST_IGNORE_ALL_DUPS   # remove older duplicate entries
+setopt HIST_IGNORE_SPACE      # ignore commands starting with space
+setopt HIST_FIND_NO_DUPS      # don't show duplicates in search
+setopt HIST_REDUCE_BLANKS     # remove superfluous blanks
+setopt HIST_VERIFY            # show command before executing from history
+setopt SHARE_HISTORY          # share history between sessions
+setopt INC_APPEND_HISTORY     # write to history file immediately
+
+# ---------------------------------------------------------------------------
+# Load modular configuration files (order matters)
+# ---------------------------------------------------------------------------
+# 1. Environment/PATH first — everything else may depend on these
+[[ -f ~/.config/zsh/env.zsh ]] && source ~/.config/zsh/env.zsh
+
+# 2. Functions — may be used by aliases
+[[ -f ~/.config/zsh/functions.zsh ]] && source ~/.config/zsh/functions.zsh
+
+# 3. Aliases — depend on env and functions
+[[ -f ~/.config/zsh/aliases.zsh ]] && source ~/.config/zsh/aliases.zsh
+
+# 4. Plugins last — compinit, syntax highlighting must be at the end
+[[ -f ~/.config/zsh/plugins.zsh ]] && source ~/.config/zsh/plugins.zsh

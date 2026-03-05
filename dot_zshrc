@@ -1,5 +1,0 @@
-# Load modular configuration files
-for file in ~/.config/zsh/*.zsh; do
-  [ -f "$file" ] && source "$file"
-done
-export PATH=/home/adrian/.opencode/bin:$PATH
