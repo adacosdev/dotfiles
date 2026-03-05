@@ -3,17 +3,14 @@
 {{- $entorno := promptStringOnce . "entorno" "Entorno (personal/adaion)" "personal" -}}
 
 [data]
-    name = {{ $name | quote }}
-    email = {{ $email | quote }}
-    entorno = {{ $entorno | quote }}
+name = {{ $name | quote }}
+email = {{ $email | quote }}
+entorno = {{ $entorno | quote }}
 
 [git]
-    autoCommit = true
-    autoPush = true
+autoCommit = true
+autoPush = true
 
 [merge]
-    command = "bash"
-    args = [
-        "-c",
-        "cp {{ .Target | quote }} {{ printf \"%s.base\" .Target | quote }} && code --new-window --wait --merge {{ .Destination | quote }} {{ .Target | quote }} {{ printf \"%s.base\" .Target | quote }} {{ .Source | quote }}",
-    ]
+command = "code"
+args = ["--new-window", "--wait", "--merge"]
