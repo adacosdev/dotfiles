@@ -154,16 +154,16 @@ if [[ -f "$HOME_DIR/.config/warp-terminal/user_preferences.json" ]]; then
     
     # Sync: This needs careful handling since Warp stores runtime data mixed with config
     # Strategy: Extract only managed keys and preserve any template variables (like {{ .chezmoi.homeDir }})
-    python3 << EOF
+    python3 << 'EOF'
 import json
 import sys
 import re
 import os
 
 try:
-    # Get variables from bash environment
-    home_dir = "$HOME_DIR"
-    chezmoi_dir = "$CHEZMOI_DIR"
+     # Get variables from environment or use defaults
+     home_dir = os.environ.get('HOME', os.path.expanduser('~'))
+     chezmoi_dir = os.environ.get('CHEZMOI_DIR', os.path.join(home_dir, '.local/share/chezmoi'))
     
     # Read the current user preferences from Warp's config directory
     with open(f'{home_dir}/.config/warp-terminal/user_preferences.json', 'r') as f:
