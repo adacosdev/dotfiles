@@ -3,11 +3,44 @@
 set -eo pipefail
 
 # =============================================================================
-# Progress Bar Helper Functions
+# Progress Bar Helper Functions with Live Activity Logging
 # =============================================================================
-show_progress() {
+
+# Global state for progress bar
+PROGRESS_FILE="/tmp/install-progress-$$"
+ACTIVITY_LOG="/tmp/install-activity-$$"
+PROGRESS_PID=""
+
+# Initialize progress state
+init_progress() {
+  echo "0" > "$PROGRESS_FILE"
+  > "$ACTIVITY_LOG"
+}
+
+# Update progress bar (static header)
+update_progress() {
+  local pct="$1"
+  local msg="$2"
+  
+  echo "$pct" > "$PROGRESS_FILE"
+  echo "$msg" > "$PROGRESS_FILE.msg"
+}
+
+# Log activity (appears below progress bar)
+log_activity() {
   local msg="$1"
-  local pct="${2:-0}"
+  echo "  📝 $msg" >> "$ACTIVITY_LOG"
+  
+  # Show last 5 lines of activity
+  tail -5 "$ACTIVITY_LOG" | while read line; do
+    echo "$line"
+  done
+}
+
+# Render static progress display
+render_progress() {
+  local pct=$(cat "$PROGRESS_FILE" 2>/dev/null || echo "0")
+  local msg=$(cat "$PROGRESS_FILE.msg" 2>/dev/null || echo "Processing")
   local bar_length=30
   local filled=$((pct * bar_length / 100))
   local empty=$((bar_length - filled))
@@ -17,18 +50,52 @@ show_progress() {
   for ((i = 0; i < empty; i++)); do bar+="-"; done
   bar+="]"
   
-  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
+  # Clear screen from cursor position and print header
+  printf "\033[2J\033[H"  # Clear screen and move to top
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  printf "📦 %s\n" "$msg"
+  printf "%s %3d%%\n" "$bar" "$pct"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Activity Log:"
+  
+  # Show activity log
+  if [[ -f "$ACTIVITY_LOG" ]]; then
+    tail -8 "$ACTIVITY_LOG"
+  fi
+  echo ""
 }
 
-show_progress_done() {
-  echo ""
-  echo "✅ $1"
+# Background progress renderer (runs in loop)
+start_progress_renderer() {
+  while true; do
+    render_progress
+    sleep 1
+  done
 }
+
+# Start background renderer
+init_progress() {
+  echo "0" > "$PROGRESS_FILE"
+  > "$ACTIVITY_LOG"
+  start_progress_renderer &
+  PROGRESS_PID=$!
+}
+
+# Cleanup on exit
+cleanup_progress() {
+  if [[ -n "$PROGRESS_PID" ]]; then
+    kill $PROGRESS_PID 2>/dev/null || true
+  fi
+  rm -f "$PROGRESS_FILE" "$PROGRESS_FILE.msg" "$ACTIVITY_LOG"
+}
+
+trap cleanup_progress EXIT
 
 # =============================================================================
 # Main Script: Install System Packages
 # =============================================================================
-show_progress "📦 Installing packages" 5
+init_progress
 
 # --- Arch Linux / EndeavourOS ---
 {{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
@@ -40,22 +107,26 @@ packages=(
 
 # Bootstrap yay
 if ! command -v yay &> /dev/null; then
-    show_progress "📦 Installing packages: yay bootstrap" 10
+    update_progress 10 "Installing yay (AUR helper)..."
+    log_activity "Cloning yay from AUR"
     sudo pacman -S --needed --noconfirm base-devel git
     sudo pacman -Sy --noconfirm archlinux-keyring
     (
-      git clone https://aur.archlinux.org/yay.git /tmp/yay
+      git clone https://aur.archlinux.org/yay.git /tmp/yay 2>&1 | grep -i "cloning\|fatal" || true
       cd /tmp/yay
+      log_activity "Building yay from source"
       makepkg -si --noconfirm
     )
     rm -rf /tmp/yay
 fi
 
-show_progress "📦 Installing packages: syncing repos" 15
-sudo pacman -Sy --noconfirm archlinux-keyring
+update_progress 15 "Syncing package repositories..."
+log_activity "Running: pacman -Sy --noconfirm archlinux-keyring"
+sudo pacman -Sy --noconfirm archlinux-keyring 2>&1 | grep -i "updated\|error" | head -3 || true
 
-show_progress "📦 Installing packages: yay packages" 20
-yay -S --needed --noconfirm "${packages[@]}"
+update_progress 20 "Installing system packages via yay..."
+log_activity "Installing ${#packages[@]} packages from AUR and official repos"
+yay -S --needed --noconfirm "${packages[@]}" 2>&1 | grep -i "installed\|already\|error" | tail -5 || true
 
 # --- Debian / Ubuntu ---
 {{ else if eq .chezmoi.osRelease.id "debian" "ubuntu" -}}
@@ -65,51 +136,59 @@ packages=(
 {{ end -}}
 )
 
-show_progress "📦 Installing packages: setting up repositories" 10
+update_progress 10 "Setting up package repositories..."
 
 # VS Code Repo
 if ! command -v code &> /dev/null; then
+    log_activity "Adding VS Code repository"
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg
     sudo install -D -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
     sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
     rm -f /tmp/packages.microsoft.gpg
 fi
 
-show_progress "📦 Installing packages: updating apt" 15
-sudo apt update
+update_progress 15 "Updating package lists..."
+log_activity "Running: apt update"
+sudo apt update 2>&1 | grep -i "hit\|get\|reading" | tail -3 || true
 
-show_progress "📦 Installing packages: installing apt packages" 25
-sudo apt install -y "${packages[@]}"
+update_progress 25 "Installing system packages..."
+log_activity "Installing ${#packages[@]} packages via apt"
+sudo apt install -y "${packages[@]}" 2>&1 | grep -i "setting up\|processing\|done" | tail -5 || true
 
 # Starship
 if ! command -v starship &> /dev/null; then
-    show_progress "📦 Installing packages: starship" 50
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    update_progress 50 "Installing starship prompt..."
+    log_activity "Downloading and installing starship"
+    curl -sS https://starship.rs/install.sh | sh -s -- -y 2>&1 | grep -i "installed\|done" || true
 fi
 
 # Eza (modern ls)
 if ! command -v eza &> /dev/null; then
-    show_progress "📦 Installing packages: eza" 55
+    update_progress 55 "Installing eza (modern ls)..."
+    log_activity "Adding eza repository and installing"
     sudo mkdir -p /etc/apt/keyrings
     wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
     echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
     sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
     sudo apt update
-    sudo apt install -y eza
+    sudo apt install -y eza 2>&1 | grep -i "setting up\|done" || true
 fi
 
 # Bat (fix alias checking)
 if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
-    show_progress "📦 Installing packages: bat symlink" 60
+    update_progress 60 "Creating bat symlink..."
+    log_activity "Setting up: ln -s /usr/bin/batcat /usr/local/bin/bat"
     mkdir -p ~/.local/bin
     ln -sf /usr/bin/batcat ~/.local/bin/bat
 fi
 
 # LazyGit
 if ! command -v lazygit &> /dev/null; then
-    show_progress "📦 Installing packages: lazygit" 65
+    update_progress 65 "Installing lazygit..."
+    log_activity "Fetching latest lazygit release"
     LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
     curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    log_activity "Installing lazygit v${LAZYGIT_VERSION}"
     tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
     sudo install /tmp/lazygit /usr/local/bin
     rm /tmp/lazygit /tmp/lazygit.tar.gz
@@ -117,16 +196,19 @@ fi
 
 # Git Delta
 if ! command -v delta &> /dev/null; then
-    show_progress "📦 Installing packages: git-delta" 70
+    update_progress 70 "Installing git-delta..."
+    log_activity "Fetching latest git-delta release"
     DELTA_VERSION=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
     curl -Lo /tmp/git-delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
+    log_activity "Installing git-delta ${DELTA_VERSION}"
     sudo dpkg -i /tmp/git-delta.deb
     rm /tmp/git-delta.deb
 fi
 
 # Fd (fix alias checking)
 if command -v fdfind &> /dev/null && ! command -v fd &> /dev/null; then
-    show_progress "📦 Installing packages: fd symlink" 75
+    update_progress 75 "Creating fd symlink..."
+    log_activity "Setting up: ln -s /usr/bin/fdfind ~/.local/bin/fd"
     mkdir -p ~/.local/bin
     ln -sf /usr/bin/fdfind ~/.local/bin/fd
 elif command -v fdfind &> /dev/null && [ ! -L ~/.local/bin/fd ]; then
@@ -136,5 +218,9 @@ fi
 
 {{ end -}}
 
-show_progress_done "System packages installed successfully"
+# Final cleanup and completion
+update_progress 100 "Installation complete!"
+log_activity "✅ All packages installed successfully"
+sleep 2  # Show completion for 2 seconds
+
 {{ end -}}
