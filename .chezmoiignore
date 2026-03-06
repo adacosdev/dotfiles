@@ -11,6 +11,9 @@ docs/
 # Backup files
 *.backup-*
 
+# Warp Terminal preferences - managed dynamically by sync script
+dot_config/warp-terminal/user_preferences.json.tmpl
+
 # OS-specific: Ignore scripts on non-Linux systems
 {{ if ne .chezmoi.os "linux" }}
 run_*
