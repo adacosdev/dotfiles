@@ -161,9 +161,9 @@ import re
 import os
 
 try:
-     # Get variables from environment or use defaults
-     home_dir = os.environ.get('HOME', os.path.expanduser('~'))
-     chezmoi_dir = os.environ.get('CHEZMOI_DIR', os.path.join(home_dir, '.local/share/chezmoi'))
+    # Get variables from environment or use defaults
+    home_dir = os.environ.get('HOME', os.path.expanduser('~'))
+    chezmoi_dir = os.environ.get('CHEZMOI_DIR', os.path.join(home_dir, '.local/share/chezmoi'))
     
     # Read the current user preferences from Warp's config directory
     with open(f'{home_dir}/.config/warp-terminal/user_preferences.json', 'r') as f:
