@@ -154,68 +154,65 @@ if [[ -f "$HOME_DIR/.config/warp-terminal/user_preferences.json" ]]; then
     
     # Sync: This needs careful handling since Warp stores runtime data mixed with config
     # Strategy: Extract only managed keys and preserve any template variables (like {{ .chezmoi.homeDir }})
-    python3 << 'EOF'
+    if python3 -c "
 import json
 import sys
 import re
 import os
 
+# Get variables from environment
+home_dir = os.environ.get('HOME', os.path.expanduser('~'))
+chezmoi_dir = os.environ.get('CHEZMOI_DIR', os.path.join(home_dir, '.local/share/chezmoi'))
+
+# Read the current user preferences from Warp's config directory
+with open(f'{home_dir}/.config/warp-terminal/user_preferences.json', 'r') as f:
+    warp_prefs = json.load(f)
+
+# Read existing template to preserve any chezmoi template variables
 try:
-    # Get variables from environment or use defaults
-    home_dir = os.environ.get('HOME', os.path.expanduser('~'))
-    chezmoi_dir = os.environ.get('CHEZMOI_DIR', os.path.join(home_dir, '.local/share/chezmoi'))
-    
-    # Read the current user preferences from Warp's config directory
-    with open(f'{home_dir}/.config/warp-terminal/user_preferences.json', 'r') as f:
-        warp_prefs = json.load(f)
-    
-    # Read existing template to preserve any chezmoi template variables
-    # This allows us to keep things like {{ .chezmoi.homeDir }} in the MCP path
-    try:
-        with open(f'{chezmoi_dir}/dot_config/warp-terminal/user_preferences.json.tmpl', 'r') as f:
-            template_content = f.read()
-    except:
-        template_content = None
-    
-    # Only sync these keys to avoid syncing transient runtime state
-    # (API quotas, UI state, experimental flags, etc.)
-    managed_keys = {
-        'Theme', 'OverrideOpacity', 'TelemetryEnabled', 'CrashReportingEnabled',
-        'Notifications', 'NLDInTerminalEnabled', 'WorkflowsBoxOpen',
-        'HasAutoOpenedConversationList', 'CloudConversationStorageEnabled',
-        'IsSettingsSyncEnabled', 'InputBoxTypeSetting', 'CustomSecretRegexList'
-    }
-    
-    # Extract MCP path from template if it exists
-    mcp_path = None
-    if template_content:
-        mcp_match = re.search(r'"MCPExecutionPath":\s*"([^"]*)"', template_content)
-        if mcp_match:
-            mcp_path = mcp_match.group(1)
-    
-    # Build new preferences object with managed keys only
-    new_prefs = {'prefs': {}}
-    for key in managed_keys:
-        if key in warp_prefs['prefs']:
-            new_prefs['prefs'][key] = warp_prefs['prefs'][key]
-    
-    # Preserve MCP path if it had template variables
-    if mcp_path and '{{' in mcp_path:
-        new_prefs['prefs']['MCPExecutionPath'] = mcp_path
-    elif 'MCPExecutionPath' in warp_prefs['prefs']:
-        new_prefs['prefs']['MCPExecutionPath'] = warp_prefs['prefs']['MCPExecutionPath']
-    
-    # Write back to chezmoi
-    with open(f'{chezmoi_dir}/dot_config/warp-terminal/user_preferences.json.tmpl', 'w') as f:
-        json.dump(new_prefs, f, indent=2)
-    
-    print("  ✓ Synced Warp preferences")
-except Exception as e:
-    print(f"  ✗ Error syncing Warp: {e}", file=sys.stderr)
-    sys.exit(1)
-EOF
-    
-    CHANGES_MADE=true
+    with open(f'{chezmoi_dir}/dot_config/warp-terminal/user_preferences.json.tmpl', 'r') as f:
+        template_content = f.read()
+except:
+    template_content = None
+
+# Only sync these keys to avoid syncing transient runtime state
+managed_keys = {
+    'Theme', 'OverrideOpacity', 'TelemetryEnabled', 'CrashReportingEnabled',
+    'Notifications', 'NLDInTerminalEnabled', 'WorkflowsBoxOpen',
+    'HasAutoOpenedConversationList', 'CloudConversationStorageEnabled',
+    'IsSettingsSyncEnabled', 'InputBoxTypeSetting', 'CustomSecretRegexList'
+}
+
+# Extract MCP path from template if it exists
+mcp_path = None
+if template_content:
+    mcp_match = re.search(r'\"MCPExecutionPath\":\s*\"([^\"]*)\"', template_content)
+    if mcp_match:
+        mcp_path = mcp_match.group(1)
+
+# Build new preferences object with managed keys only
+new_prefs = {'prefs': {}}
+for key in managed_keys:
+    if key in warp_prefs.get('prefs', {}):
+        new_prefs['prefs'][key] = warp_prefs['prefs'][key]
+
+# Preserve MCP path if it had template variables
+if mcp_path and '{{' in mcp_path:
+    new_prefs['prefs']['MCPExecutionPath'] = mcp_path
+elif 'MCPExecutionPath' in warp_prefs.get('prefs', {}):
+    new_prefs['prefs']['MCPExecutionPath'] = warp_prefs['prefs']['MCPExecutionPath']
+
+# Write back to chezmoi
+with open(f'{chezmoi_dir}/dot_config/warp-terminal/user_preferences.json.tmpl', 'w') as f:
+    json.dump(new_prefs, f, indent=2)
+
+print('OK')
+"; then
+      echo "  ✓ Synced Warp preferences" | tee -a "$SYNC_LOG"
+      CHANGES_MADE=true
+    else
+      echo -e "${YELLOW}⚠ Could not sync Warp preferences${NC}"
+    fi
   fi
 fi
 
