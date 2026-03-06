@@ -8,6 +8,9 @@ docs/
 .vscode/
 .idea/
 
+# Backup files
+*.backup-*
+
 # OS-specific: Ignore scripts on non-Linux systems
 {{ if ne .chezmoi.os "linux" }}
 run_*

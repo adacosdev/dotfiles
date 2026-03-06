@@ -99,7 +99,7 @@ sync_config() {
 echo -e "${BLUE}Checking VS Code configuration...${NC}"
 sync_config \
   "$HOME_DIR/.config/Code/User/settings.json" \
-  "$CHEZMOI_DIR/dot_config/private_Code/User/settings.json.tmpl" \
+  "$CHEZMOI_DIR/dot_config/private_Code/User/settings.json" \
   "VS Code settings"
 
 sync_config \
@@ -116,7 +116,7 @@ sync_config \
 echo -e "${BLUE}Checking Cursor IDE configuration...${NC}"
 sync_config \
   "$HOME_DIR/.config/Cursor/User/settings.json" \
-  "$CHEZMOI_DIR/dot_config/private_Cursor/User/settings.json.tmpl" \
+  "$CHEZMOI_DIR/dot_config/private_Cursor/User/settings.json" \
   "Cursor settings"
 
 sync_config \
@@ -126,10 +126,11 @@ sync_config \
 
 # Antigravity Settings
 echo -e "${BLUE}Checking Antigravity configuration...${NC}"
-sync_config \
-  "$HOME_DIR/.config/Antigravity/User/settings.json" \
-  "$CHEZMOI_DIR/dot_config/private_Antigravity/User/settings.json.tmpl" \
-  "Antigravity settings"
+# Note: Antigravity settings contain template variables, so we don't sync them automatically
+# sync_config \
+#   "$HOME_DIR/.config/Antigravity/User/settings.json" \
+#   "$CHEZMOI_DIR/dot_config/private_Antigravity/User/settings.json.tmpl" \
+#   "Antigravity settings"
 
 sync_config \
   "$HOME_DIR/.config/Antigravity/User/keybindings.json" \
@@ -252,14 +253,26 @@ for file in aliases functions plugins; do
   fi
 done
 
-# Validate all templates
-echo -e "\n${BLUE}Validating chezmoi templates...${NC}"
-if cd "$CHEZMOI_DIR" && chezmoi dump --format=json > /dev/null 2>&1; then
-  echo -e "${GREEN}✓ All templates are valid${NC}"
+# Validate all templates (skip if running inside chezmoi apply to avoid lock contention)
+if [[ -z "$CHEZMOI" ]]; then
+  echo -e "\n${BLUE}Validating chezmoi templates...${NC}"
+  cd "$CHEZMOI_DIR"
+  if chezmoi dump --format=json > /tmp/chezmoi_dump.json 2>&1; then
+    if [[ -s /tmp/chezmoi_dump.json ]] && ! grep -q "^chezmoi:" /tmp/chezmoi_dump.json; then
+      echo -e "${GREEN}✓ All templates are valid${NC}"
+    else
+      echo -e "${RED}✗ Template validation failed!${NC}"
+      cat /tmp/chezmoi_dump.json
+      exit 1
+    fi
+  else
+    echo -e "${RED}✗ Template validation failed!${NC}"
+    echo "  Run 'chezmoi dump --format=json' for details"
+    exit 1
+  fi
+  cd - > /dev/null
 else
-  echo -e "${RED}✗ Template validation failed!${NC}"
-  echo "  Run 'chezmoi dump --format=json' for details"
-  exit 1
+  echo -e "\n${BLUE}Running inside chezmoi apply - skipping template validation${NC}"
 fi
 
 # Git operations: Stage, commit, and optionally push changes
