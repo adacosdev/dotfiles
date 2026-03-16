@@ -1,0 +1,21 @@
+[Unit]
+Description=Chezmoi Watch Daemon - Auto-commit dotfile changes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/share/chezmoi/dot_config/chezmoi-watch-daemon.sh daemon
+Restart=on-failure
+RestartSec=10
+Environment=HOME=%h
+Environment=CHEZMOI_DIR=%h/.local/share/chezmoi
+Environment=LOG_FILE=%h/.local/share/chezmoi/auto-commit.log
+Environment=XDG_RUNTIME_DIR=%t
+
+# Logging
+StandardOutput=append:%h/.local/share/chezmoi/auto-commit.log
+StandardError=append:%h/.local/share/chezmoi/auto-commit.log
+
+[Install]
+WantedBy=default.target
