@@ -1,23 +1,49 @@
-# Valores por defecto para personalización
-color_barra_adaion: "#53DD6C"      # Verde para adaion
-color_fuente_adaion: "#000000"
-color_barra_home: "#17bebb"        # Azul para personal
-color_fuente_home: "#000000"
+# Shared data for chezmoi templates
+#
+# Structure:
+# - platforms.* describes capability layers and future OS targets
+# - packages.common.* stays portable when possible
+# - packages.linux.* contains distro-specific install lists
+# - extensions.common.* centralizes editor extension sync
 
-# Paquetes por distribución
+color_barra_adaion: '#53DD6C'
+color_fuente_adaion: '#000000'
+color_barra_home: '#17bebb'
+color_fuente_home: '#000000'
+platforms:
+  common:
+    editors:
+    - code
+    - cursor
+    - antigravity
+  linux:
+    distros:
+    - ubuntu
+    - debian
+    - arch
+    - endeavouros
+  darwin:
+    enabled: false
+  windows:
+    enabled: false
 packages:
-  ubuntu:
-    - build-essential
+  common:
+    cli:
     - zsh
     - git
-    - curl
     - wget
     - unzip
     - fzf
     - ripgrep
     - bat
-    - fd-find
     - zoxide
+    - lsb-release
+    - httpie
+  linux:
+    ubuntu:
+    - build-essential
+    - curl
+    - fd-find
     - python3
     - python3-venv
     - python3-pip
@@ -25,15 +51,10 @@ packages:
     - apt-transport-https
     - ca-certificates
     - gnupg
-    - lsb-release
     - jq
     - tldr
-    - httpie
     - code
-    # NOTE: The following are installed by run_onchange_before_00_install-packages.sh extras:
-    # starship (curl), eza (deb repo), lazygit (github), git-delta (deb), bat/fd symlinks
-  arch:
-    # NOTE: chezmoi install and most CLI tools are pre-installed on Arch/EndeavourOS
+    arch:
     - accountsservice
     - alsa-firmware
     - alsa-plugins
@@ -45,7 +66,6 @@ packages:
     - base
     - base-devel
     - bash-completion
-    - bat
     - bind
     - bitwarden-cli
     - bluedevil
@@ -95,9 +115,7 @@ packages:
     - ffmpegthumbs
     - firefox
     - firewalld
-    - fzf
     - fwupd
-    - git
     - git-delta
     - glances
     - grub
@@ -112,7 +130,6 @@ packages:
     - helix
     - hwdetect
     - hwinfo
-    - httpie
     - inetutils
     - inxi
     - iptables-nft
@@ -147,7 +164,6 @@ packages:
     - linux-lts
     - linux-lts-headers
     - logrotate
-    - lsb-release
     - lsscsi
     - lvm2
     - lazygit
@@ -212,7 +228,6 @@ packages:
     - python-pyqt6
     - qt6-imageformats
     - rebuild-detector
-    - ripgrep
     - reflector
     - reflector-simple
     - rsync
@@ -241,14 +256,12 @@ packages:
     - ttf-liberation
     - ttf-opensans
     - unrar
-    - unzip
     - upower
     - usb_modeswitch
     - usbutils
     - visual-studio-code-bin
     - warp-terminal
     - welcome
-    - wget
     - which
     - whois
     - wireless-regdb
@@ -271,8 +284,133 @@ packages:
     - xterm
     - yakuake
     - yay
-    - zoxide
-    - zsh
     - zsh-completions
     - zsh-autosuggestions
     - zsh-syntax-highlighting
+  darwin:
+    brew: []
+  windows:
+    winget: []
+extensions:
+  common:
+    editors:
+    - adpyke.codesnap
+    - astro-build.astro-vscode
+    - astro-build.houston
+    - azurite.azurite
+    - bajdzis.vscode-twig-pack
+    - bierner.markdown-preview-github-styles
+    - bmewburn.vscode-intelephense-client
+    - bradlc.vscode-tailwindcss
+    - catppuccin.catppuccin-vsc-icons
+    - chadalen.vscode-jetbrains-icon-theme
+    - chakrounanas.turbo-console-log
+    - charliermarsh.ruff
+    - christian-kohler.npm-intellisense
+    - christian-kohler.path-intellisense
+    - chrmarti.regex
+    - codesandbox-io.codesandbox-projects-theme
+    - daltonmenezes.aura-theme
+    - davidanson.vscode-markdownlint
+    - dbaeumer.vscode-eslint
+    - docker.docker
+    - dsznajder.es7-react-js-snippets
+    - eamodio.gitlens
+    - eliverlara.andromeda
+    - enkia.tokyo-night
+    - esbenp.prettier-vscode
+    - figma.figma-vscode-extension
+    - github.codespaces
+    - github.copilot-chat
+    - github.github-vscode-theme
+    - github.remotehub
+    - github.vscode-pull-request-github
+    - hediet.vscode-drawio
+    - humao.rest-client
+    - kisstkondoros.vscode-gutter-preview
+    - linear.linear-connect
+    - linear.linear-open-issue
+    - meganrogge.template-string-converter
+    - mhutchie.git-graph
+    - midudev.better-svg
+    - miguelsolorio.fluent-icons
+    - miguelsolorio.symbols
+    - monokai.theme-monokai-pro-vscode
+    - ms-azuretools.vscode-azureappservice
+    - ms-azuretools.vscode-azurefunctions
+    - ms-azuretools.vscode-azureresourcegroups
+    - ms-azuretools.vscode-azurestaticwebapps
+    - ms-azuretools.vscode-azurestorage
+    - ms-azuretools.vscode-bicep
+    - ms-azuretools.vscode-containers
+    - ms-azuretools.vscode-docker
+    - ms-ceintl.vscode-language-pack-es
+    - ms-dotnettools.vscode-dotnet-runtime
+    - ms-playwright.playwright
+    - ms-python.autopep8
+    - ms-python.black-formatter
+    - ms-python.debugpy
+    - ms-python.isort
+    - ms-python.python
+    - ms-python.vscode-pylance
+    - ms-python.vscode-python-envs
+    - ms-vscode-remote.remote-containers
+    - ms-vscode-remote.remote-ssh
+    - ms-vscode-remote.remote-ssh-edit
+    - ms-vscode-remote.remote-wsl
+    - ms-vscode-remote.vscode-remote-extensionpack
+    - ms-vscode.azure-repos
+    - ms-vscode.cmake-tools
+    - ms-vscode.copilot-mermaid-diagram
+    - ms-vscode.cpptools-extension-pack
+    - ms-vscode.cpptools-themes
+    - ms-vscode.live-server
+    - ms-vscode.remote-explorer
+    - ms-vscode.remote-repositories
+    - ms-vscode.remote-server
+    - ms-vscode.vscode-copilot-vision
+    - ms-vscode.vscode-websearchforcopilot
+    - ms-vsliveshare.vsliveshare
+    - naumovs.color-highlight
+    - oderwat.indent-rainbow
+    - pflannery.vscode-versionlens
+    - pkief.material-icon-theme
+    - prisma.prisma
+    - rapidapi.vscode-rapidapi-client
+    - rapidapi.vscode-services
+    - redhat.java
+    - redhat.vscode-yaml
+    - ritwickdey.liveserver
+    - sdras.vue-vscode-snippets
+    - siddharthkp.codesandbox-black
+    - snowflake.snowflake-vsc
+    - svelte.svelte-vscode
+    - talhabalaj.actual-font-changer
+    - tamasfe.even-better-toml
+    - teabyii.ayu
+    - tomoki1207.pdf
+    - twxs.cmake
+    - usernamehw.errorlens
+    - vercel.turbo-vsc
+    - vitest.explorer
+    - vscjava.migrate-java-to-azure
+    - vscjava.vscode-gradle
+    - vscjava.vscode-java-debug
+    - vscjava.vscode-java-dependency
+    - vscjava.vscode-java-pack
+    - vscjava.vscode-java-test
+    - vscjava.vscode-java-upgrade
+    - vscjava.vscode-maven
+    - vscode-icons-team.vscode-icons
+    - vue.volar
+    - wallabyjs.console-ninja
+    - wayou.vscode-todo-highlight
+    - wix.vscode-import-cost
+    - yzane.markdown-pdf
+    - yzhang.markdown-all-in-one
+    - zhuangtongfa.material-theme
+    - zobo.php-intellisense
+  darwin:
+    editors: []
+  windows:
+    editors: []

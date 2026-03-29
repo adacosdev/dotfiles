@@ -1,29 +1,36 @@
 # 📈 Scalability & Maintenance
 
-This repository is designed to be scalable and support multiple Linux distributions (currently **Arch/EndeavourOS** and **Ubuntu/Debian**). This guide explains how to add new configurations or packages.
+This repository is designed to scale by separating **portable config**,
+**platform-specific config**, and **bootstrap data**. Current provisioning is
+still strongest on Linux (**Arch/EndeavourOS** and **Ubuntu/Debian**), but the
+data model now prepares for `darwin` and `windows` too.
 
 ## 📦 Package Management
 
-Packages are not defined inside the shell scripts to keep them clean. Instead, they are centralized in `.chezmoidata.yaml` for easy reading and management.
+Portable package data is centralized in `.chezmoidata.yaml` so installation
+scripts can stay focused on execution policy.
 
 ### Structure of `.chezmoidata.yaml`
 
 ```yaml
 packages:
-  # List for Ubuntu/Debian
-  ubuntu:
-    - packagename
-    - another-package
-  # List for Arch/EndeavourOS
-  arch:
-    - packagename
-    - another-package-aur
+  common:
+    cli:
+      - git
+      - zsh
+  linux:
+    ubuntu:
+      - build-essential
+    arch:
+      - yay
 ```
 
 ### How to add a package
 
 1. Open `.chezmoidata.yaml`.
-2. Find the section for your distro (`arch` or `ubuntu`).
+2. Decide whether the package is:
+   - portable CLI tooling → `packages.common.cli`
+   - Linux distro specific → `packages.linux.<distro>`
 3. Add the exact package name.
    - On **Arch**, the script uses `yay` (supports official repos and AUR).
    - On **Ubuntu**, the script uses `apt`.
@@ -33,21 +40,40 @@ packages:
 1. Add a new list in `.chezmoidata.yaml`:
    ```yaml
    packages:
-     fedora:
-       - git
-       - zsh
+     linux:
+       fedora:
+         - git
+         - zsh
    ```
 2. Edit `run_onchange_00_install-packages.sh.tmpl`:
    - Add a conditional block:
      ```bash
      {{ else if eq .chezmoi.osRelease.id "fedora" -}}
      packages=(
-     {{ range .packages.fedora -}}
+     {{ range .packages.common.cli -}}
+       {{ . }}
+     {{ end -}}
+     {{ range .packages.linux.fedora -}}
        {{ . }}
      {{ end -}}
      )
      sudo dnf install -y "${packages[@]}"
      ```
+
+## 🔌 Extension Management
+
+Editor extensions are also centralized in `.chezmoidata.yaml`:
+
+```yaml
+extensions:
+  common:
+    editors:
+      - dbaeumer.vscode-eslint
+      - esbenp.prettier-vscode
+```
+
+The sync script installs this shared list into any supported editor CLI found on
+the machine (`code`, `cursor`, `antigravity`).
 
 ## 🖥️ Script Configuration
 
@@ -58,6 +84,13 @@ Scripts use `chezmoi` templates (`.tmpl`). You can use Go template logic to cond
 - `{{ .chezmoi.os }}`: `linux`, `darwin` (macOS), `windows`.
 - `{{ .chezmoi.osRelease.id }}`: `arch`, `ubuntu`, `debian`, `fedora`.
 - `{{ .entorno }}`: Custom variable defined during init (`personal` or `adaion`).
+
+### Current conventions
+
+- `packages.common.*` → portable install lists
+- `packages.linux.*` → distro-specific Linux install lists
+- `extensions.common.*` → shared editor extension sets
+- `platforms.*` → capability placeholders for future darwin/windows layering
 
 Example usage in a script:
 ```bash

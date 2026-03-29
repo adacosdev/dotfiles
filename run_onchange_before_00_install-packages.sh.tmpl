@@ -100,7 +100,10 @@ init_progress
 # --- Arch Linux / EndeavourOS ---
 {{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
 packages=(
-{{ range .packages.arch -}}
+{{ range .packages.common.cli -}}
+  {{ . }}
+{{ end -}}
+{{ range .packages.linux.arch -}}
   {{ . }}
 {{ end -}}
 )
@@ -131,7 +134,10 @@ yay -S --needed --noconfirm "${packages[@]}" 2>&1 | grep -i "installed\|already\
 # --- Debian / Ubuntu ---
 {{ else if eq .chezmoi.osRelease.id "debian" "ubuntu" -}}
 packages=(
-{{ range .packages.ubuntu -}}
+{{ range .packages.common.cli -}}
+  {{ . }}
+{{ end -}}
+{{ range .packages.linux.ubuntu -}}
   {{ . }}
 {{ end -}}
 )
