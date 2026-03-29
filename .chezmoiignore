@@ -11,6 +11,9 @@ docs/
 # Backup files
 *.backup-*
 
+# Bootstrap helper sources stay in chezmoi source dir and are sourced by run_* entrypoints.
+bootstrap/linux/helpers/
+
 # Warp Terminal preferences - managed dynamically by sync script
 dot_config/warp-terminal/user_preferences.json.tmpl
 

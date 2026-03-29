@@ -2,28 +2,7 @@
 #!/bin/bash
 set -eo pipefail
 
-# =============================================================================
-# Progress Bar Helper Functions
-# =============================================================================
-show_progress() {
-  local msg="$1"
-  local pct="${2:-0}"
-  local bar_length=30
-  local filled=$((pct * bar_length / 100))
-  local empty=$((bar_length - filled))
-  
-  local bar="["
-  for ((i = 0; i < filled; i++)); do bar+="="; done
-  for ((i = 0; i < empty; i++)); do bar+="-"; done
-  bar+="]"
-  
-  printf "\r\033[K%s %s %3d%%" "$msg" "$bar" "$pct"
-}
-
-show_progress_done() {
-  echo ""
-  echo "✅ $1"
-}
+source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/progress.sh" }}"
 
 # =============================================================================
 # Main Script: Configure Docker

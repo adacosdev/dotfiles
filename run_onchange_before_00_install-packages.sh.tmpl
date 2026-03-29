@@ -2,100 +2,15 @@
 #!/bin/bash
 set -eo pipefail
 
-# =============================================================================
-# Progress Bar Helper Functions with Live Activity Logging
-# =============================================================================
-
-# Global state for progress bar
-PROGRESS_FILE="/tmp/install-progress-$$"
-ACTIVITY_LOG="/tmp/install-activity-$$"
-PROGRESS_PID=""
-
-# Initialize progress state
-init_progress() {
-  echo "0" > "$PROGRESS_FILE"
-  > "$ACTIVITY_LOG"
-}
-
-# Update progress bar (static header)
-update_progress() {
-  local pct="$1"
-  local msg="$2"
-  
-  echo "$pct" > "$PROGRESS_FILE"
-  echo "$msg" > "$PROGRESS_FILE.msg"
-}
-
-# Log activity (appears below progress bar)
-log_activity() {
-  local msg="$1"
-  echo "  📝 $msg" >> "$ACTIVITY_LOG"
-  
-  # Show last 5 lines of activity
-  tail -5 "$ACTIVITY_LOG" | while read line; do
-    echo "$line"
-  done
-}
-
-# Render static progress display
-render_progress() {
-  local pct=$(cat "$PROGRESS_FILE" 2>/dev/null || echo "0")
-  local msg=$(cat "$PROGRESS_FILE.msg" 2>/dev/null || echo "Processing")
-  local bar_length=30
-  local filled=$((pct * bar_length / 100))
-  local empty=$((bar_length - filled))
-  
-  local bar="["
-  for ((i = 0; i < filled; i++)); do bar+="="; done
-  for ((i = 0; i < empty; i++)); do bar+="-"; done
-  bar+="]"
-  
-  # Clear screen from cursor position and print header
-  printf "\033[2J\033[H"  # Clear screen and move to top
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  printf "📦 %s\n" "$msg"
-  printf "%s %3d%%\n" "$bar" "$pct"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  echo "Activity Log:"
-  
-  # Show activity log
-  if [[ -f "$ACTIVITY_LOG" ]]; then
-    tail -8 "$ACTIVITY_LOG"
-  fi
-  echo ""
-}
-
-# Background progress renderer (runs in loop)
-start_progress_renderer() {
-  while true; do
-    render_progress
-    sleep 1
-  done
-}
-
-# Start background renderer
-init_progress() {
-  echo "0" > "$PROGRESS_FILE"
-  > "$ACTIVITY_LOG"
-  start_progress_renderer &
-  PROGRESS_PID=$!
-}
-
-# Cleanup on exit
-cleanup_progress() {
-  if [[ -n "$PROGRESS_PID" ]]; then
-    kill $PROGRESS_PID 2>/dev/null || true
-  fi
-  rm -f "$PROGRESS_FILE" "$PROGRESS_FILE.msg" "$ACTIVITY_LOG"
-}
+source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/progress.sh" }}"
+source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/package-installs.sh" }}"
 
 trap cleanup_progress EXIT
 
 # =============================================================================
 # Main Script: Install System Packages
 # =============================================================================
-init_progress
+init_progress "$$"
 
 # --- Arch Linux / EndeavourOS ---
 {{ if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
@@ -161,66 +76,12 @@ update_progress 25 "Installing system packages..."
 log_activity "Installing ${#packages[@]} packages via apt"
 sudo apt install -y "${packages[@]}" 2>&1 | grep -i "setting up\|processing\|done" | tail -5 || true
 
-# Starship
-if ! command -v starship &> /dev/null; then
-    update_progress 50 "Installing starship prompt..."
-    log_activity "Downloading and installing starship"
-    curl -sS https://starship.rs/install.sh | sh -s -- -y 2>&1 | grep -i "installed\|done" || true
-fi
-
-# Eza (modern ls)
-if ! command -v eza &> /dev/null; then
-    update_progress 55 "Installing eza (modern ls)..."
-    log_activity "Adding eza repository and installing"
-    sudo mkdir -p /etc/apt/keyrings
-    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
-    sudo apt update
-    sudo apt install -y eza 2>&1 | grep -i "setting up\|done" || true
-fi
-
-# Bat (fix alias checking)
-if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
-    update_progress 60 "Creating bat symlink..."
-    log_activity "Setting up: ln -s /usr/bin/batcat /usr/local/bin/bat"
-    mkdir -p ~/.local/bin
-    ln -sf /usr/bin/batcat ~/.local/bin/bat
-fi
-
-# LazyGit
-if ! command -v lazygit &> /dev/null; then
-    update_progress 65 "Installing lazygit..."
-    log_activity "Fetching latest lazygit release"
-    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
-    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-    log_activity "Installing lazygit v${LAZYGIT_VERSION}"
-    tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
-    sudo install /tmp/lazygit /usr/local/bin
-    rm /tmp/lazygit /tmp/lazygit.tar.gz
-fi
-
-# Git Delta
-if ! command -v delta &> /dev/null; then
-    update_progress 70 "Installing git-delta..."
-    log_activity "Fetching latest git-delta release"
-    DELTA_VERSION=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
-    curl -Lo /tmp/git-delta.deb "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb"
-    log_activity "Installing git-delta ${DELTA_VERSION}"
-    sudo dpkg -i /tmp/git-delta.deb
-    rm /tmp/git-delta.deb
-fi
-
-# Fd (fix alias checking)
-if command -v fdfind &> /dev/null && ! command -v fd &> /dev/null; then
-    update_progress 75 "Creating fd symlink..."
-    log_activity "Setting up: ln -s /usr/bin/fdfind ~/.local/bin/fd"
-    mkdir -p ~/.local/bin
-    ln -sf /usr/bin/fdfind ~/.local/bin/fd
-elif command -v fdfind &> /dev/null && [ ! -L ~/.local/bin/fd ]; then
-    mkdir -p ~/.local/bin
-    ln -sf /usr/bin/fdfind ~/.local/bin/fd
-fi
+install_starship_if_missing
+install_eza_if_missing
+ensure_bat_alias_if_available
+install_lazygit_if_missing
+install_delta_if_missing
+ensure_fd_alias_if_available
 
 {{ end -}}
 
