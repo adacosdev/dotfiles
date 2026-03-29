@@ -36,6 +36,7 @@ NC='\033[0m' # No Color
 CHEZMOI_DIR="${CHEZMOI_DIR:-$HOME/.local/share/chezmoi}"
 HOME_DIR="$HOME"
 SYNC_TIMESTAMP_FILE="$HOME/.cache/chezmoi-sync-timestamp"
+BACKUP_DIR="$HOME/.local/state/chezmoi-sync/backups"
 AUTO_COMMIT=false
 PUSH_CHANGES=false
 
@@ -56,9 +57,23 @@ fi
 
 # Initialize sync timestamp file
 mkdir -p "$(dirname "$SYNC_TIMESTAMP_FILE")"
+mkdir -p "$BACKUP_DIR"
 if [[ ! -f "$SYNC_TIMESTAMP_FILE" ]]; then
   touch "$SYNC_TIMESTAMP_FILE"
 fi
+
+backup_file() {
+  local source_file="$1"
+  local label="$2"
+
+  if [[ ! -f "$source_file" ]]; then
+    return 0
+  fi
+
+  local safe_label
+  safe_label=$(echo "$label" | tr '/ :' '___')
+  cp "$source_file" "$BACKUP_DIR/${safe_label}-$(date +%s).bak"
+}
 
 echo -e "${BLUE}Starting chezmoi config sync...${NC}\n"
 
@@ -83,9 +98,9 @@ sync_config() {
   if [[ "$source" -nt "$SYNC_TIMESTAMP_FILE" ]]; then
     echo -e "${YELLOW}[Sync]${NC} $config_name"
     
-    # Back up old version if exists
+    # Back up previous imported version outside the repo
     if [[ -f "$dest" ]]; then
-      cp "$dest" "${dest}.backup-$(date +%s)"
+      backup_file "$dest" "$config_name"
     fi
     
     # Copy file to chezmoi (preserve .tmpl extension if applicable)
@@ -148,9 +163,9 @@ if [[ -f "$HOME_DIR/.config/warp-terminal/user_preferences.json" ]]; then
   if [[ "$HOME_DIR/.config/warp-terminal/user_preferences.json" -nt "$SYNC_TIMESTAMP_FILE" ]]; then
     echo -e "${YELLOW}[Sync]${NC} Warp Terminal preferences"
     
-    # Create backup
+    # Create backup outside the repo
     if [[ -f "$warp_dest" ]]; then
-      cp "$warp_dest" "${warp_dest}.backup-$(date +%s)"
+      backup_file "$warp_dest" "warp-terminal-user-preferences"
     fi
     
     # Sync: This needs careful handling since Warp stores runtime data mixed with config

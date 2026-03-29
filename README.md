@@ -1,10 +1,19 @@
 # 🚀 adacosdev Dotfiles
 
-![Linux](https://img.shields.io/badge/OS-Linux-blue?logo=linux)
 ![Chezmoi](https://img.shields.io/badge/Managed%20by-Chezmoi-black?logo=chezmoi)
-![VSCode](https://img.shields.io/badge/Editor-VS%20Code-007ACC?logo=visual-studio-code)
+![Linux](https://img.shields.io/badge/Bootstrap-Linux-blue?logo=linux)
+![Cross Platform](https://img.shields.io/badge/Strategy-Common%20%2B%20Platform-informational)
 
-My personal and professional fullstack configuration automated with **Chezmoi**. Optimized for a hybrid workflow on **Ubuntu** and **EndeavourOS**.
+My personal configuration platform powered by **Chezmoi**.
+
+The repository now follows a clearer model:
+
+- **Common dotfiles** are the portable core.
+- **Platform layers** add OS-specific behavior.
+- **Bootstrap scripts** provision machines, but are not the source of truth.
+- The **chezmoi source repo** is canonical.
+
+At the moment, the bootstrap workflow is still **Linux-first** (Ubuntu/Debian and Arch/EndeavourOS), while the repository structure is being prepared for cleaner `linux`, `darwin`, and `windows` layering.
 
 ## ✨ Key Features
 
@@ -12,6 +21,7 @@ My personal and professional fullstack configuration automated with **Chezmoi**.
 - 🖋️ **Fonts:** Automated installation of Nerd Fonts (*JetBrainsMono, Iosevka, FiraCode, Hack*).
 - 🛠️ **Runtimes:** Ready-to-use setup for Docker, Node.js (`fnm`), and Python (`pyenv`).
 - 🐚 **Zsh & Warp:** Optimized aliases, dynamic prompts (`starship`), and plugin management.
+- 🧭 **Source of truth defined:** reverse-sync is import-only; review changes before commit/push.
 
 ## 📥 Quick Install
 
@@ -43,8 +53,11 @@ Scripts execute in a deterministic order thanks to numbered prefixes:
 
 This repository includes guides to facilitate maintenance:
 
+- [🏗️ Architecture Guide](docs/ARCHITECTURE.md): Explains the repository domains (`common`, `platform`, `bootstrap`, `sync`) and the source-of-truth model.
+- [🖥️ Platform Guide](docs/PLATFORMS.md): Clarifies what belongs in shared config vs Linux/macOS/Windows-specific layers.
 - [📈 Scalability Guide](docs/SCALABILITY.md): Explains how to add new packages, support new distros, and understand the `.chezmoidata.yaml` structure.
 - [🛠️ Tools Guide](docs/TOOLS.md): Discover how to use the included productivity tools like `h` (aliases cheatsheet), `hs` (smart history), `zoxide`, `lazygit`, and more.
+- [🔄 Sync Guide](SYNC_GUIDE.md): Documents reverse-sync, source of truth, backups, and the recommended review workflow.
 
 ## 🔧 Environment Configuration
 This repo uses dynamic Chezmoi templates. The first time you run `chezmoi init`, you will be prompted for your email and environment type (`personal` or `adaion`).

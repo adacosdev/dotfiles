@@ -12,8 +12,9 @@ email = {{ $email | quote }}
 entorno = {{ $entorno | quote }}
 
 [git]
-autoCommit = true
-autoPush = true
+# Keep history intentional: review changes before committing/pushing.
+autoCommit = false
+autoPush = false
 
 [edit]
 command = "code"
