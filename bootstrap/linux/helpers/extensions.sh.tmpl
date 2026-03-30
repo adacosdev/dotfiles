@@ -1,9 +1,7 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 {{- $code_extensions := .extensions.vscode }}
 {{- $cursor_extensions := .extensions.cursor }}

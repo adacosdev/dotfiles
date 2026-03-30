@@ -1,9 +1,7 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 {{- if .chezmoi.osRelease.id | hasPrefix "ubuntu" | or (.chezmoi.osRelease.id | hasPrefix "debian") }}
 install_pyenv_build_dependencies() {

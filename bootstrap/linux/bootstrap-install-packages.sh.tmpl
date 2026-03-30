@@ -1,9 +1,6 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/bin/bash
-
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 # ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║             BOOTSTRAP LINUX — SYSTEM PACKAGES (chezmoi apply)               ║

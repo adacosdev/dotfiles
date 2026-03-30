@@ -40,6 +40,35 @@ packages:
     - lsb-release
     - httpie
   linux:
+    debian:
+    - build-essential
+    - curl
+    - fd-find
+    - python3
+    - python3-venv
+    - python3-pip
+    - apt-transport-https
+    - ca-certificates
+    - gnupg
+    - jq
+    - software-properties-common
+    - code
+    fedora:
+    - gcc
+    - gcc-c++
+    - make
+    - cmake
+    - autoconf
+    - automake
+    - flex
+    - bison
+    - curl
+    - fd-find
+    - python3
+    - python3-pip
+    - dnf-plugins-core
+    - jq
+    - code
     ubuntu:
     - build-essential
     - curl

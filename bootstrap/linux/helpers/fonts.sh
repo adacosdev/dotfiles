@@ -1,9 +1,7 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 FONT_DIR="${HOME}/.local/share/fonts"
 mkdir -p "$FONT_DIR"

@@ -1,9 +1,7 @@
 {{- if eq .chezmoi.os "linux" }}
 #!/bin/bash
 
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 {{- $shell_path := "/usr/bin/zsh" }}
 

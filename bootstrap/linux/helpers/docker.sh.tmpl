@@ -1,9 +1,7 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
-{{-   if .headless }}
 set -e
-{{-   end }}
 
 # Installs Docker Engine + docker-compose on Linux.
 # Relies on package-managers.sh helpers for distro detection and install.
