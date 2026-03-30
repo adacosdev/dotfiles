@@ -78,9 +78,84 @@ install_antigravity_extensions() {
 
 {{- end }}
 
+install_ghostty() {
+  if command -v ghostty &>/dev/null; then
+    echo "  ⏩ ghostty already installed: $(ghostty --version 2>/dev/null || ghostty -v 2>/dev/null || echo 'ok')"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🖥️  Ghostty terminal"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  {{- if .chezmoi.osRelease.id | hasPrefix "arch" }}
+
+  # Arch: AUR via yay
+  if command -v yay &>/dev/null; then
+    echo "  📦 Installing ghostty from AUR (yay)..."
+    yay -Sy --noconfirm --needed ghostty 2>&1 | tail -5
+  elif command -v paru &>/dev/null; then
+    echo "  📦 Installing ghostty from AUR (paru)..."
+    paru -Sy --noconfirm --needed ghostty 2>&1 | tail -5
+  else
+    echo "  ⚠️  yay/paru not found. Install yay first: git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si"
+  fi
+
+  {{- else if eq .chezmoi.osRelease.id "fedora" }}
+
+  # Fedora: build from source
+  echo "  🔨 Building ghostty from source (requires Zig)..."
+  local ghostty_version="tip"
+  local build_dir="/tmp/ghostty-build-$"
+
+  if ! command -v zig &>/dev/null; then
+    echo "  ⚠️  Zig not found. Install: curl -fsSL https://ziglang.org/download/index.html | sh"
+    echo "  📝 On Fedora: dnf install zig"
+    return 1
+  fi
+
+  mkdir -p "$build_dir"
+  cd "$build_dir"
+  curl -fsSL "https://github.com/ghostty-org/ghostty/releases/download/${ghostty_version}/ghostty-source.tar.gz" -o ghostty.tar.gz
+  tar xzf ghostty.tar.gz
+  cd ghostty-*
+  zig build -p "$HOME/.local" 2>&1 | tail -10
+  rm -rf "$build_dir"
+
+  {{- else if .chezmoi.osRelease.id | hasPrefix "ubuntu" | or (.chezmoi.osRelease.id | hasPrefix "debian") }}
+
+  # Ubuntu/Debian: build from source
+  echo "  🔨 Building ghostty from source (requires Zig)..."
+  local ghostty_version="tip"
+  local build_dir="/tmp/ghostty-build-$"
+
+  if ! command -v zig &>/dev/null; then
+    echo "  ⚠️  Zig not found. Install Zig first to build ghostty."
+    echo "  📝 Run: curl -fsSL https://ziglang.org/download/index.html | sh"
+    return 1
+  fi
+
+  mkdir -p "$build_dir"
+  cd "$build_dir"
+  curl -fsSL "https://github.com/ghostty-org/ghostty/releases/download/${ghostty_version}/ghostty-source.tar.gz" -o ghostty.tar.gz
+  tar xzf ghostty.tar.gz
+  cd ghostty-*
+  zig build -p "$HOME/.local" 2>&1 | tail -10
+  rm -rf "$build_dir"
+
+  {{- end }}
+
+  if command -v ghostty &>/dev/null; then
+    echo "  ✅ ghostty installed: $(ghostty -v 2>/dev/null || echo 'ok')"
+  else
+    echo "  ⚠️  ghostty install failed. Try: yay -S ghostty (Arch) or install Zig manually."
+  fi
+}
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🔌 Editor Extensions"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+install_ghostty
 install_vscode_extensions
 install_cursor_extensions
 install_antigravity_extensions

@@ -41,6 +41,7 @@ packages:
     - httpie
   linux:
     debian:
+    - tmux
     - build-essential
     - curl
     - fd-find
@@ -54,6 +55,7 @@ packages:
     - software-properties-common
     - code
     fedora:
+    - tmux
     - gcc
     - gcc-c++
     - make
@@ -70,6 +72,7 @@ packages:
     - jq
     - code
     ubuntu:
+    - tmux
     - build-essential
     - curl
     - fd-find
