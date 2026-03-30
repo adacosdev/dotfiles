@@ -1,0 +1,92 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+{{- $code_extensions := .extensions.vscode }}
+{{- $cursor_extensions := .extensions.cursor }}
+{{- $antigravity_extensions := .extensions.antigravity }}
+
+# Editor extensions for macOS.
+# Extensions are identical to Linux — only the install command differs.
+# Homebrew should be installed first (homebrew.sh).
+
+install_vscode_extensions() {
+{{-   if $code_extensions }}
+  local extensions=(
+    {{- range $code_extensions }}
+    "{{ . }}"
+    {{- end }}
+  )
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 VS Code extensions (macOS)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  for ext in "${extensions[@]}"; do
+    if code --list-extensions 2>/dev/null | grep -q "^$ext$"; then
+      echo "  ⏩ $ext already installed"
+    else
+      echo "  ⬇️  code --install-extension $ext"
+      code --install-extension "$ext" 2>/dev/null && \
+        echo "  ✅ $ext" || echo "  ⚠️  Failed: $ext"
+    fi
+  done
+{{-   end }}
+}
+
+install_cursor_extensions() {
+{{-   if $cursor_extensions }}
+  local extensions=(
+    {{- range $cursor_extensions }}
+    "{{ . }}"
+    {{- end }}
+  )
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 Cursor extensions (macOS)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  for ext in "${extensions[@]}"; do
+    if cursor --list-extensions 2>/dev/null | grep -q "^$ext$"; then
+      echo "  ⏩ $ext already installed"
+    else
+      echo "  ⬇️  cursor --install-extension $ext"
+      cursor --install-extension "$ext" 2>/dev/null && \
+        echo "  ✅ $ext" || echo "  ⚠️  Failed: $ext"
+    fi
+  done
+{{-   end }}
+}
+
+install_antigravity_extensions() {
+{{-   if $antigravity_extensions }}
+  local extensions=(
+    {{- range $antigravity_extensions }}
+    "{{ . }}"
+    {{- end }}
+  )
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 Antigravity extensions (macOS)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  for ext in "${extensions[@]}"; do
+    echo "  ⬇️  antigravity --install-extension $ext"
+    antigravity --install-extension "$ext" 2>/dev/null && \
+      echo "  ✅ $ext" || echo "  ⚠️  Failed: $ext"
+  done
+{{-   end }}
+}
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔌 Editor Extensions (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+install_vscode_extensions
+install_cursor_extensions
+install_antigravity_extensions
+echo "✅ Extensions installed"
+
+{{- end }}

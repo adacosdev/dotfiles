@@ -1,0 +1,84 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+{{- $brew_packages := .packages.darwin.brew | default (list) }}
+
+# Installs Homebrew and common macOS tools.
+# Relies on fonts.sh, extensions.sh for those concerns.
+# Handles both Apple Silicon (M1/M2/M3) and Intel Macs.
+
+BREW_PREFIX=""
+if [[ -d "/opt/homebrew" ]]; then
+  BREW_PREFIX="/opt/homebrew"       # Apple Silicon
+elif [[ -d "/usr/local" ]]; then
+  BREW_PREFIX="/usr/local"          # Intel
+fi
+
+install_homebrew() {
+  if command -v brew &>/dev/null; then
+    echo "  ⏩ Homebrew already installed: $(brew --version | head -1)"
+    return 0
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🍺 Installing Homebrew"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing Homebrew"
+
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # Re-evaluate prefix after install
+  if [[ -d "/opt/homebrew" ]]; then
+    BREW_PREFIX="/opt/homebrew"
+  elif [[ -d "/usr/local" ]]; then
+    BREW_PREFIX="/usr/local"
+  fi
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ Homebrew installed"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "⚠️  Run these two commands in YOUR terminal to add Homebrew to your PATH:"
+  echo ""
+  if [[ -d "/opt/homebrew" ]]; then
+    echo '  echo "eval \"\$(/opt/homebrew/bin/brew shellenv)\"" >> ~/.zprofile'
+    echo '  eval "\$(/opt/homebrew/bin/brew shellenv)"'
+  else
+    echo '  echo "eval \"\$(/usr/local/bin/brew shellenv)\"" >> ~/.zprofile'
+    echo '  eval "\$(/usr/local/bin/brew shellenv)"'
+  fi
+  echo ""
+}
+
+install_brew_packages() {
+{{-   if $brew_packages }}
+  local packages=(
+    {{- range $brew_packages }}
+    "{{ . }}"
+    {{- end }}
+  )
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 Installing Homebrew packages"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  for pkg in "${packages[@]}"; do
+    if brew list --formula "$pkg" &>/dev/null; then
+      echo "  ⏩ $pkg already installed"
+    else
+      echo "  ⬇️  brew install --formula $pkg"
+      brew install --formula "$pkg" 2>&1 | grep -v "^$" | tail -3 && \
+        echo "  ✅ $pkg" || echo "  ⚠️  Failed: $pkg"
+    fi
+  done
+{{-   end }}
+}
+
+install_homebrew
+install_brew_packages
+
+{{- end }}

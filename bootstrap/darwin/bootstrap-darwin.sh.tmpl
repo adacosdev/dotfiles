@@ -1,0 +1,172 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║             BOOTSTRAP DARWIN — macOS bootstrap (chezmoi apply)            ║
+# ║                                                                              ║
+# ║  This script runs via run_onchange_before so it executes every time         ║
+# ║  chezmoi apply is called on macOS. It is idempotent.                       ║
+# ║                                                                              ║
+# ║  Prerequisites (run first, in order):                                       ║
+# ║    1. Install Xcode Command Line Tools: xcode-select --install             ║
+# ║    2. Clone dotfiles: git clone github.com/adacosdev/dotfiles.git ~/.local/share/chezmoi  ║
+# ║    3. Run: chezmoi apply                                                   ║
+# ║                                                                              ║
+# ║  Usage: chezmoi apply  (or: ./bootstrap-darwin.sh)                          ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HELPERS_DIR="${SCRIPT_DIR}/helpers"
+
+# ── helpers ────────────────────────────────────────────────────────────────────
+if [[ -f "${HELPERS_DIR}/homebrew.sh" ]]; then
+  source "${HELPERS_DIR}/homebrew.sh"
+fi
+
+log_activity() {
+  local msg="$1"
+  echo "  📝 $msg"
+}
+
+update_progress() {
+  local percent="${1:-0}"
+  local msg="${2:-}"
+  if [[ -n "$msg" ]]; then
+    printf "  \033[1;36m[%3d%%]\033[0m %s\n" "$percent" "$msg"
+  fi
+}
+
+# ── Xcode Command Line Tools ───────────────────────────────────────────────────
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🍎 Xcode Command Line Tools"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if ! command -v git &>/dev/null; then
+  log_activity "Installing Xcode Command Line Tools..."
+  xcode-select --install
+  echo "  ⚠️  Follow the prompt to install Xcode CLT, then re-run this script"
+  exit 1
+else
+  echo "  ✅ Xcode CLT already installed: $(git --version)"
+fi
+
+# ── Homebrew + packages ────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🍺 Homebrew + packages"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+update_progress 20 "Installing Homebrew..."
+log_activity "Homebrew will be installed if not present"
+# homebrew.sh handles its own idempotency
+source "${HELPERS_DIR}/homebrew.sh"
+
+# ── chezmoi ───────────────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🏠 chezmoi bootstrap"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+update_progress 60 "Setting up chezmoi..."
+if command -v chezmoi &>/dev/null; then
+  log_activity "chezmoi already installed: $(chezmoi --version | head -1)"
+else
+  log_activity "Installing chezmoi..."
+  sh -c "$(curl -fsSL https://chezmoi.io/install.sh)"
+fi
+
+# ── nvim lazy.nvim bootstrap ───────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🟢 Bootstrap lazy.nvim (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+NVIM_DIR="${HOME}/.config/nvim"
+if [[ ! -d "${NVIM_DIR}" ]]; then
+  mkdir -p "${NVIM_DIR}"
+  log_activity "Created nvim config directory"
+fi
+
+update_progress 70 "Bootstrapping lazy.nvim..."
+# Trigger lazy.nvim bootstrap on first nvim launch
+# (plugins are installed when nvim is opened)
+
+# ── tmux + TPM bootstrap ─────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⬛ Bootstrap tmux + TPM (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+update_progress 80 "Installing TPM..."
+TMUX_PLUGINS="${HOME}/.tmux/plugins"
+if [[ ! -d "${TMUX_PLUGINS}/tpm" ]]; then
+  mkdir -p "${TMUX_PLUGINS}"
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "${TMUX_PLUGINS}/tpm"
+  log_activity "TPM installed — press Ctrl+A I in tmux to install plugins"
+else
+  log_activity "TPM already installed"
+fi
+
+# ── Oh My Zsh + p10k ──────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🌟 Oh My Zsh + Powerlevel10k (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+update_progress 90 "Bootstrapping Oh My Zsh..."
+if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
+  log_activity "Installing Oh My Zsh..."
+  sh -c "$(curl -fsSL https://ohmyz.sh/root)" "" --unattended
+else
+  log_activity "Oh My Zsh already installed"
+fi
+
+# Powerlevel10k
+if [[ ! -d "${HOME}/.oh-my-zsh/custom/themes/powerlevel10k" ]]; then
+  log_activity "Installing Powerlevel10k theme..."
+  git clone --depth 1 https://github.com/romkatv/powerlevel10k.git "${HOME}/.oh-my-zsh/custom/themes/powerlevel10k"
+else
+  log_activity "Powerlevel10k already installed"
+fi
+
+# ── Fonts ─────────────────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔤 Fonts (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+source "${HELPERS_DIR}/fonts.sh"
+
+# ── Extensions ────────────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔌 Editor Extensions (macOS)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+source "${HELPERS_DIR}/extensions.sh"
+
+# ── Shell ─────────────────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🐚 Shell setup"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+source "${HELPERS_DIR}/set-shell.sh"
+
+# ── Done ─────────────────────────────────────────────────────────────────────
+echo ""
+update_progress 100 "Bootstrap complete ✅"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Darwin bootstrap finished successfully"
+echo ""
+echo "Next steps:"
+echo "  1. Restart your terminal"
+echo "  2. Run 'brew shellenv' to add Homebrew to PATH (if on Apple Silicon: /opt/homebrew/bin/brew shellenv)"
+echo "  3. Run 'nvim' to trigger lazy.nvim plugin installation"
+echo "  4. Run 'tmux' then Ctrl+A I to install tmux plugins"
+echo "  5. Review ~/.zshrc generated by chezmoi"
+echo ""
+
+{{- end }}
