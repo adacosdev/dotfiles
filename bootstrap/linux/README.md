@@ -11,6 +11,10 @@ Current helper sources live under `bootstrap/linux/helpers/` and are sourced by
 the root `run_*` entrypoints via `{{ .chezmoi.sourceDir }}` so chezmoi keeps the
 same execution model while Linux logic becomes reusable.
 
+The current extraction strategy is intentionally conservative: keep package
+lists and entrypoint ordering in the root scripts, and move only reusable distro
+detection, package-manager primitives, and shared shell helpers into this layer.
+
 Examples that belong here conceptually:
 
 - package installation

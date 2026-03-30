@@ -3,7 +3,10 @@
 set -eo pipefail
 
 source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/progress.sh" }}"
+source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/package-managers.sh" }}"
 source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/package-installs.sh" }}"
+
+export CHEZMOI_LINUX_DISTRO_ID="{{ .chezmoi.osRelease.id }}"
 
 trap cleanup_progress EXIT
 
@@ -70,11 +73,11 @@ fi
 
 update_progress 15 "Updating package lists..."
 log_activity "Running: apt update"
-sudo apt update 2>&1 | grep -i "hit\|get\|reading" | tail -3 || true
+pkg_update 2>&1 | grep -i "hit\|get\|reading" | tail -3 || true
 
 update_progress 25 "Installing system packages..."
 log_activity "Installing ${#packages[@]} packages via apt"
-sudo apt install -y "${packages[@]}" 2>&1 | grep -i "setting up\|processing\|done" | tail -5 || true
+pkg_install "${packages[@]}" 2>&1 | grep -i "setting up\|processing\|done" | tail -5 || true
 
 install_starship_if_missing
 install_eza_if_missing

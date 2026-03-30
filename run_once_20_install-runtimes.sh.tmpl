@@ -3,6 +3,9 @@
 set -eo pipefail
 
 source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/progress.sh" }}"
+source "{{ joinPath .chezmoi.sourceDir "bootstrap/linux/helpers/package-managers.sh" }}"
+
+export CHEZMOI_LINUX_DISTRO_ID="{{ .chezmoi.osRelease.id }}"
 
 # =============================================================================
 # Main Script: Install Runtimes (Node/Python)
@@ -27,11 +30,7 @@ fi
 if [ ! -d "$HOME/.pyenv" ]; then
     show_progress "🛠️ Installing runtimes: pyenv dependencies" 58
     # Dependencias necesarias para compilar Python en varias distros
-    {{ if eq .chezmoi.osRelease.id "ubuntu" "debian" -}}
-    sudo apt update && sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-    {{ else if eq .chezmoi.osRelease.id "arch" "endeavouros" -}}
-    sudo pacman -S --noconfirm base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libxml2 libffi
-    {{ end -}}
+    install_pyenv_build_dependencies
     
     show_progress "🛠️ Installing runtimes: pyenv" 62
     curl https://pyenv.run | bash
