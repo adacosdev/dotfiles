@@ -1,0 +1,145 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║             BOOTSTRAP LINUX — SYSTEM PACKAGES (chezmoi apply)               ║
+# ║                                                                              ║
+# ║  This script runs via run_onchange_before so it executes every time         ║
+# ║  chezmoi apply is called. It is idempotent — packages already installed     ║
+# ║  are skipped automatically.                                                ║
+# ║                                                                              ║
+# ║  Usage: chezmoi apply  (or: ./bootstrap-install-packages.sh)                ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HELPERS_DIR="${SCRIPT_DIR}/helpers"
+
+# ── helpers ────────────────────────────────────────────────────────────────────
+if [[ -f "${HELPERS_DIR}/progress.sh" ]]; then
+  source "${HELPERS_DIR}/progress.sh"
+fi
+
+if [[ -f "${HELPERS_DIR}/package-managers.sh" ]]; then
+  source "${HELPERS_DIR}/package-managers.sh"
+fi
+
+# ── detect package lists from chezmoi data ─────────────────────────────────────
+{{- $packages := dict
+  "ubuntu" (.packages.linux.ubuntu | toStrings)
+  "debian" (.packages.linux.debian | toStrings)
+  "arch"   (.packages.linux.arch   | toStrings)
+  "fedora" (.packages.linux.fedora | toStrings)
+}}
+{{- $distro := .chezmoi.osRelease.id | default "unknown" }}
+{{- $pkgs := index $packages $distro | default (index $packages "ubuntu") }}
+
+log_activity() {
+  local msg="$1"
+  echo "  📝 $msg"
+}
+
+# ── system packages ────────────────────────────────────────────────────────────
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📦 Installing system packages for {{ $distro }}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+{{- if $pkgs }}
+log_activity "Updating package lists..."
+update_progress 10 "Updating package lists..."
+pkg_update
+
+log_activity "Installing {{ len $pkgs }} packages..."
+update_progress 30 "Installing packages..."
+pkg_install {{ range $pkgs }}"{{ . }}"{{ end }}
+
+update_progress 90 "Cleaning up..."
+{{- end }}
+
+# ── chezmoi (bootstrap itself) ─────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🏠 Setting up chezmoi bootstrap"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if command -v chezmoi &>/dev/null; then
+  log_activity "chezmoi already installed: $(chezmoi --version | head -1)"
+else
+  log_activity "Installing chezmoi..."
+  sh -c "$(curl -fsSL https://chezmoi.io/install.sh)"
+fi
+
+# ── nvim lazy.nvim bootstrap ───────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🟢 Bootstrap lazy.nvim"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+NVIM_DIR="${HOME}/.config/nvim"
+if [[ ! -d "${NVIM_DIR}" ]]; then
+  mkdir -p "${NVIM_DIR}"
+  log_activity "Created nvim config directory"
+fi
+
+# Trigger lazy.nvim bootstrap (downloads and installs plugins on first nvim launch)
+log_activity "Installing lazy.nvim plugin manager..."
+lazygit_installed=false
+if ! command -v lazygit &>/dev/null; then
+  curl -sLo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -Po '"tag_name": "v\K[^"]*')_Linux_x86_64.tar.gz" 2>/dev/null
+  tar xzf /tmp/lazygit.tar.gz -C /tmp lazygit 2>/dev/null
+  sudo install /tmp/lazygit /usr/local/bin/lazygit 2>/dev/null || true
+  rm -f /tmp/lazygit /tmp/lazygit.tar.gz
+fi
+
+# ── tmux TPM bootstrap ─────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⬛ Bootstrap tmux plugin manager"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+TMUX_PLUGINS="${HOME}/.tmux/plugins"
+if [[ ! -d "${TMUX_PLUGINS}/tpm" ]]; then
+  log_activity "Installing TPM (Tmux Plugin Manager)..."
+  mkdir -p "${TMUX_PLUGINS}"
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "${TMUX_PLUGINS}/tpm"
+  log_activity "TPM installed — press Ctrl+A I in tmux to install plugins"
+else
+  log_activity "TPM already installed"
+fi
+
+# ── Oh My Zsh bootstrap ────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🌟 Bootstrap Oh My Zsh"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
+  log_activity "Installing Oh My Zsh..."
+  sh -c "$(curl -fsSL https://ohmyz.sh/root)" "" --unattended
+else
+  log_activity "Oh My Zsh already installed"
+fi
+
+# Install Powerlevel10k
+if [[ ! -d "${HOME}/.oh-my-zsh/custom/themes/powerlevel10k" ]]; then
+  log_activity "Installing Powerlevel10k theme..."
+  git clone --depth 1 https://github.com/romkatv/powerlevel10k.git "${HOME}/.oh-my-zsh/custom/themes/powerlevel10k"
+fi
+
+# ── Done ───────────────────────────────────────────────────────────────────────
+echo ""
+update_progress 100 "Bootstrap complete ✅"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Linux bootstrap finished successfully"
+echo ""
+echo "Next steps:"
+echo "  1. Log out and back in (for docker group and shell change)"
+echo "  2. Run 'nvim' to trigger lazy.nvim plugin installation"
+echo "  3. Run 'tmux' then Ctrl+A I to install tmux plugins"
+echo "  4. Review ~/.zshrc generated by chezmoi"
+echo ""
+
+{{- end }}

@@ -1,0 +1,156 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+{{- if .chezmoi.osRelease.id | hasPrefix "ubuntu" | or (.chezmoi.osRelease.id | hasPrefix "debian") }}
+install_pyenv_build_dependencies() {
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq build-essential libssl-dev zlib1g-dev libbz2-dev \
+      libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev \
+      libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+  fi
+}
+{{- end }}
+
+{{- if eq .chezmoi.osRelease.id "arch" }}
+install_pyenv_build_dependencies() {
+  if command -v pacman >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm --needed \
+      base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libxml2 libffi
+  fi
+}
+{{- end }}
+
+{{- if eq .chezmoi.osRelease.id "fedora" }}
+install_pyenv_build_dependencies() {
+  if command -v dnf >/dev/null 2>&1; then
+    sudo dnf groupinstall -y "Development Tools"
+    sudo dnf install -y openssl-devel bzip2 bzip2-devel readline-devel \
+      sqlite-devel curl git xz xz-devel tk-devel libxml2-devel libxmlsec1-devel \
+      libffi-devel zlib-devel
+  fi
+}
+{{- end }}
+
+install_python() {
+  if command -v python3 &>/dev/null; then
+    echo "✅ Python3 already installed: $(python3 --version)"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🐍 Installing Python (via pyenv)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing Python build dependencies"
+  update_progress 20 "Installing Python build dependencies..."
+  install_pyenv_build_dependencies
+
+  local pyenv_dir="${HOME}/.pyenv"
+  if [[ ! -d "$pyenv_dir" ]]; then
+    update_progress 40 "Cloning pyenv..."
+    log_activity "Cloning pyenv"
+    git clone --depth 1 https://github.com/pyenv/pyenv.git "$pyenv_dir"
+    git clone --depth 1 https://github.com/pyenv/pyenv-virtualenv.git "$pyenv_dir/plugins/pyenv-virtualenv" 2>/dev/null || true
+  fi
+
+  export PATH="$pyenv_dir/bin:$PATH"
+  eval "$(pyenv init -)"
+  pyenv install 3.12:latest 2>&1 | tail -5
+  pyenv global 3.12
+  update_progress 100 "Python installed ✅"
+  echo "✅ Python $(python3 --version) installed via pyenv"
+}
+
+install_go() {
+  if command -v go &>/dev/null; then
+    echo "✅ Go already installed: $(go version | cut -d' ' -f3)"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🐹 Installing Go"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing Go"
+
+  local go_version="1.23.0"
+  local go_arch="{{ .chezmoi.arch }}"
+  local go_os="{{ .chezmoi.os }}"
+
+  update_progress 30 "Downloading Go ${go_version}..."
+  curl -sSL "https://go.dev/dl/go${go_version}.${go_os}-${go_arch}.tar.gz" -o /tmp/go.tar.gz
+  update_progress 70 "Extracting Go..."
+  sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+  rm /tmp/go.tar.gz
+
+  export PATH="$HOME/go/bin:/usr/local/go/bin:$PATH"
+  update_progress 100 "Go installed ✅"
+  echo "✅ Go $(go version | cut -d' ' -f3) installed"
+}
+
+install_rust() {
+  if command -v rustc &>/dev/null; then
+    echo "✅ Rust already installed: $(rustc --version | cut -d' ' -f1-2)"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🦀 Installing Rust"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing Rust"
+  update_progress 30 "Downloading rustup..."
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>&1 | grep -E "installed|success|cargo" || true
+  export PATH="$HOME/.cargo/bin:$PATH"
+  update_progress 100 "Rust installed ✅"
+  echo "✅ Rust $(rustc --version | cut -d' ' -f2) installed"
+}
+
+install_volta_if_missing() {
+  if command -v volta &>/dev/null; then
+    echo "✅ Volta already installed: $(volta --version)"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "⚡ Installing Volta (Node.js manager)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing Volta"
+  update_progress 30 "Downloading Volta..."
+  curl https://get.volta.sh | bash
+  export VOLTA_HOME="$HOME/.volta"
+  export PATH="$VOLTA_HOME/bin:$PATH"
+  volta install node@lts 2>&1 | tail -3
+  update_progress 100 "Volta installed ✅"
+  echo "✅ Volta $(volta --version) installed with Node.js LTS"
+}
+
+{{- if not (.chezmoi.osRelease.id | hasPrefix "debian") }}
+install_chezmoi() {
+  if command -v chezmoi &>/dev/null; then
+    echo "✅ chezmoi already installed"
+    return
+  fi
+
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🏠 Installing chezmoi"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  log_activity "Installing chezmoi bootstrap"
+  update_progress 20 "Installing chezmoi..."
+  sh -c "$(curl -fsSL https://chezmoi.io/install.sh)" 2>&1 | grep -v "^$" | tail -3
+  update_progress 100 "chezmoi installed ✅"
+}
+{{- end }}
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📦 Runtimes"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+install_python
+install_go
+install_rust
+install_volta_if_missing
+install_chezmoi
+
+{{- end }}

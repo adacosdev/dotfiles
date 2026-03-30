@@ -1,0 +1,60 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+FONT_DIR="${HOME}/.local/share/fonts"
+mkdir -p "$FONT_DIR"
+
+download_and_install_font() {
+  local url="$1"
+  local filename="$2"
+  local font_name="$3"
+
+  if fc-list | grep -qi "$font_name"; then
+    echo "  ⏩ $font_name already installed — skipping"
+    return 0
+  fi
+
+  echo "  ⬇️  Downloading $font_name..."
+  curl -fSL "$url" -o "/tmp/$filename" || {
+    echo "  ⚠️  Failed to download $font_name"
+    return 1
+  }
+
+  echo "  📦 Installing $font_name..."
+  mkdir -p "$FONT_DIR/$font_name"
+  unzip -q "/tmp/$filename" -d "$FONT_DIR/$font_name"
+  rm "/tmp/$filename"
+  return 0
+}
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔤 Installing Fonts"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# JetBrains Mono — monospace with ligatures
+download_and_install_font \
+  "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
+  "JetBrainsMono.zip" \
+  "JetBrainsMono"
+
+# Iosevka Term Nerd Font — terminal-optimized, excellent glyph coverage
+download_and_install_font \
+  "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/IosevkaTermNerdFont.zip" \
+  "IosevkaTermNerdFont.zip" \
+  "IosevkaTermNF"
+
+echo ""
+echo "🔄 Rebuilding font cache..."
+fc-cache -fv 2>/dev/null
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Fonts installed"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+fc-list | grep -i "jetbrains\|iosevka" | head -10
+
+{{- end }}

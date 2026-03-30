@@ -1,0 +1,52 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+{{-   if .headless }}
+set -e
+{{-   end }}
+
+# Installs Docker Engine + docker-compose on Linux.
+# Relies on package-managers.sh helpers for distro detection and install.
+
+if ! command -v pkg_install >/dev/null 2>&1; then
+  # source helpers when called directly
+  source "$(dirname "${BASH_SOURCE[0]}")/package-managers.sh"
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🐳 Installing Docker"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+log_activity "Installing Docker engine"
+update_progress 10 "Adding Docker repository..."
+
+{{- if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") }}
+curl -fsSL https://download.docker.com/linux/{{ .chezmoi.osRelease.id }}/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg 2>/dev/null
+echo "deb [arch={{ .chezmoi.arch }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ .chezmoi.osRelease.id }} {{ .chezmoi.osRelease.versionCodename }} stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+{{- end }}
+
+{{- if eq .chezmoi.osRelease.id "arch" }}
+sudo pacman -S --noconfirm docker docker-compose
+{{- end }}
+
+{{- if eq .chezmoi.osRelease.id "fedora" }}
+sudo dnf -y install docker-compose
+{{- end }}
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔧 Configuring Docker"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+update_progress 80 "Enabling Docker service..."
+sudo systemctl enable --now docker 2>/dev/null || true
+
+update_progress 90 "Adding user to docker group..."
+sudo usermod -aG docker "$USER" 2>/dev/null || true
+
+update_progress 100 "Docker installed ✅"
+echo ""
+echo "⚠️  You may need to re-login or run 'newgrp docker' for group changes to take effect."
+
+{{- end }}
