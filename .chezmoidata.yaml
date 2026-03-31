@@ -39,6 +39,7 @@ packages:
     - zoxide
     - lsb-release
     - httpie
+    - fish
   linux:
     debian:
     - tmux
@@ -54,6 +55,9 @@ packages:
     - jq
     - software-properties-common
     - code
+    - kitty
+    - alacritty
+    - fish
     fedora:
     - tmux
     - gcc
@@ -71,6 +75,9 @@ packages:
     - dnf-plugins-core
     - jq
     - code
+    - kitty
+    - alacritty
+    - fish
     ubuntu:
     - tmux
     - build-essential
@@ -79,13 +86,16 @@ packages:
     - python3
     - python3-venv
     - python3-pip
-    - software-properties-common
+    - software-properties-essential
     - apt-transport-https
     - ca-certificates
     - gnupg
     - jq
     - tldr
     - code
+    - kitty
+    - alacritty
+    - fish
     arch:
     - accountsservice
     - alsa-firmware
@@ -319,6 +329,9 @@ packages:
     - zsh-completions
     - zsh-autosuggestions
     - zsh-syntax-highlighting
+    - wezterm
+    - zellij
+    - nushell
   darwin:
     brew: []
   windows:
