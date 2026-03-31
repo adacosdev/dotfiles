@@ -1,4 +1,4 @@
-format = """\
+format = """
 $directory\
 $git_branch\
 $git_status\
@@ -17,10 +17,11 @@ $kubernetes\
 $aws\
 $cmd_duration\
 $time\
-\n$character\
+$line_break\
+$character\
 """
 
-add_newline = false
+add_newline = true
 command_timeout = 3600000
 palette = "gentleman"
 
