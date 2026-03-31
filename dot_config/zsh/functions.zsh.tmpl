@@ -135,3 +135,39 @@ cmm() { # > Chezmoi commit with fzf file selection
   git -C "$chezmoi_dir" commit -m "$msg"
   echo "✅ Committed: $msg"
 }
+
+# =============================================================================
+# Terminal Multiplexer Auto-Start
+# =============================================================================
+
+# Auto-start tmux or zellij when opening a terminal (from Gentleman.Dots)
+# Set WM_CMD to 'tmux' or 'zellij' to choose which one to use
+export WM_CMD="${WM_CMD:-tmux}"
+
+start_if_needed() { # > Auto-start tmux/zellij if not already inside a session
+  # Skip if already inside tmux or zellij
+  [[ -n "$TMUX" || -n "$ZELLIJ" ]] && return
+
+  # Skip if not in an interactive terminal
+  [[ ! -t 1 ]] && return
+
+  # Skip inside IDEs / editors
+  [[ -n "$VSCODE_PID" || -n "$VSCODE_INJECTION" || "$TERM_PROGRAM" == "vscode" ]] && return
+  [[ -n "$INTELLIJ_ENVIRONMENT_READER" ]] && return
+
+  case "$WM_CMD" in
+    tmux)
+      if command -v tmux &>/dev/null; then
+        # Attach to existing session or create a new one
+        tmux attach-session 2>/dev/null || tmux new-session
+      fi
+      ;;
+    zellij)
+      if command -v zellij &>/dev/null; then
+        zellij attach --create
+      fi
+      ;;
+  esac
+}
+
+start_if_needed
